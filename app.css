@@ -1,0 +1,312 @@
+/* Health Dashboard — app-shell styles (tab navigation + design tokens). */
+
+:root {
+  --bg: #0e0e12;
+  --surface: #16161f;
+  --surface-2: #1c1c28;
+  --line: #ffffff14;
+  --line-soft: #ffffff0d;
+  --text: #ececf2;
+  --text-2: #9a9ac2;
+  --text-3: #6a6a8c;
+  --accent: #22d3ee;
+  --accent-dim: #0891b2;
+  --good: #34d399;
+  --warn: #facc15;
+  --bad: #fb7185;
+  --info: #60a5fa;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
+}
+
+body { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+
+.screen { animation: scr .18s ease; }
+@keyframes scr { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+/* Уважать системный запрос «меньше движения» — по ВСЕМУ приложению, а не только смене экрана.
+   На странице ~7 источников движения (переходы табов/плиток/тоггла/summary, всплытие экрана,
+   свечение активной иконки). Узкое `.screen{animation:none}` глушило один. Ковровое правило
+   сводит ЛЮБУЮ анимацию/переход к мгновенному, не ломая конечное состояние (duration→0, не
+   удаление свойства). Сторож page_audit.motion_problems следит, что оно есть и универсально. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- bottom tab bar ---- */
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  height: 68px;
+  display: flex; justify-content: space-around; align-items: stretch;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--tabbar-bg);
+  backdrop-filter: saturate(160%) blur(24px);
+  -webkit-backdrop-filter: saturate(160%) blur(24px);
+  border-top: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 #ffffff0a;
+  z-index: 1000;
+}
+.tab {
+  position: relative; flex: 1;
+  min-height: 44px;                               /* HIG/WCAG 2.5.5: зона нажатия ≥44px (бар и так 68) */
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  background: none; border: none; color: var(--text-3);
+  font-family: inherit; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color .15s ease, transform .1s ease;
+}
+.tab::before {                                  /* active top indicator */
+  content: ""; position: absolute; top: 0;
+  width: 18px; height: 3px; border-radius: 0 0 3px 3px;
+  background: var(--accent);
+  opacity: 0; transform: scaleX(.3);
+  transition: opacity .2s ease, transform .2s cubic-bezier(.2, .8, .2, 1);
+}
+.tab-i { font-size: 24px; line-height: 1; opacity: .55; filter: grayscale(.35); transition: all .15s ease; }
+.tab-l { font-size: 11px; font-weight: 700; letter-spacing: .3px; }
+.tab.active { color: var(--accent); }
+.tab.active::before { opacity: 1; transform: scaleX(1); }
+.tab.active .tab-i { opacity: 1; transform: translateY(-1px); filter: drop-shadow(0 0 6px var(--accent)); }
+.tab:active { transform: scale(.92); }
+
+/* ---- collapsible heavy tables (progressive disclosure) ---- */
+details.collapse { margin: var(--s3) 0; }
+details.collapse > summary {
+  list-style: none; cursor: pointer;
+  min-height: 44px;                               /* HIG/WCAG 2.5.5: раскрывашка — полноразмерная зона нажатия */
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 14px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  color: var(--text-2); font-size: 13px; font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+}
+details.collapse > summary::-webkit-details-marker { display: none; }
+details.collapse > summary::after {
+  content: "\203A"; margin-left: auto; font-size: 20px; color: var(--text-3);
+  transition: transform .2s ease;
+}
+details.collapse[open] > summary::after { transform: rotate(90deg); }
+details.collapse > summary:active { transform: scale(.99); }
+details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
+
+/* ---- Overview bento ---- */
+.bento { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 16px 14px; }
+.tile {
+  position: relative; grid-column: span 1;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+  padding: 16px; display: flex; flex-direction: column; gap: 6px;
+  text-align: left; font-family: inherit; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .12s ease, border-color .12s ease;
+}
+.tile.wide { grid-column: 1 / -1; }
+.tile:active { transform: scale(.98); border-color: var(--accent); }
+.tile .eyebrow { display: flex; align-items: center; gap: 6px; font: 700 11px/1.4 inherit; letter-spacing: 1px; text-transform: uppercase; color: var(--text-2); }
+.tile .kpi { font: 800 30px/1 inherit; color: var(--text-hi); letter-spacing: -.01em; }
+.tile .kpi small { font-size: 14px; font-weight: 600; color: var(--text-2); margin-left: 2px; }
+.tile .sub { font-size: 12px; color: var(--text-2); }
+.tile .chev { position: absolute; top: 14px; right: 14px; font-size: 18px; color: var(--text-3); }
+.tile.c-good .sub { color: var(--good); }
+.tile.c-bad .sub { color: var(--bad); }
+.tile.c-warn .sub { color: var(--warn); }
+.tile.c-info .sub { color: var(--info); }
+.tile.c-muted .sub { color: var(--text-3); }
+
+/* ============================================================
+   THEME — dark is the default; light activates on <html data-theme="light">.
+   The pre-paint script in feedback_2026.html resolves system vs stored choice
+   and always stamps an explicit data-theme, so no @media duplication is needed.
+   Dark values below are the exact legacy hexes → the dark look is unchanged.
+   ============================================================ */
+:root{
+  --bg:#0f0f13;
+  --bg-hero-1:#0f0f13; --bg-hero-2:#1a1a2e; --bg-hero-3:#16213e;
+  --surface:#16161f;
+  --surface-2:#1a1a2e;
+  --text:#ececf2;
+  --text-hi:#ffffff;
+  --text-2:#aaaacc;
+  --text-3:#8a8ac4;   /* было #6666aa — 3.46:1 на карточке, ниже AA */
+  --line:#ffffff10;
+  --line-2:#ffffff14;
+  --line-soft:#ffffff0d;
+  --line-hair:#ffffff08;
+  --tabbar-bg:rgba(14,14,18,0.72);
+  --toggle-edge:#ffffff2b;
+  /* семантика: в тёмной теме легаси-значения проходят AA (4.69–8.37).
+     --warn — ярко-жёлтый yellow-400 (выбор Алексея 23.07: «жёлтый жёлтым, ближе к золоту»),
+     заменил оранжевый amber #f59e0b; на #0f0f13 даёт ~11:1. Инлайн-литерал светофора
+     генераторы всё ещё печатают #f59e0b — его правит блок «тёмная тема» ниже по значению. */
+  --good:#22c55e; --warn:#facc15; --bad:#e94560; --info:#3b82f6;
+  --accent:#22d3ee; --violet:#a78bfa;
+}
+:root[data-theme="light"]{
+  --bg:#eef1f6;
+  --bg-hero-1:#e9eef7; --bg-hero-2:#dbe6f5; --bg-hero-3:#cfe0f1;
+  --surface:#ffffff;
+  --surface-2:#eef1f7;
+  --text:#242a36;
+  --text-hi:#0c1018;
+  --text-2:#4b5265;
+  --text-3:#5f6678;   /* было #6b7387 — 4.19:1 на фоне страницы */
+  --line:#00000012;
+  --line-2:#0000001c;
+  --line-soft:#0000000d;
+  --line-hair:#00000010;
+  --tabbar-bg:rgba(248,250,253,0.78);
+  /* проверено на обоих светлых фонах (#fff и #eef1f6), оба ≥4.5:1 */
+  /* --warn: жёлтое золото (тон 51°), а не оранжево-коричневый #8a5a00 (39°) — выбор Алексея
+     23.07 «хочу жёлтые в светлой». Ярче на белом мелкий текст не читается (потолок ~4.5:1);
+     #7d6a00 = 5.34/4.72. Свет и тьма теперь один семантический смысл, но разные значения:
+     тьма #facc15 (яркий жёлтый на чёрном), свет #7d6a00 (золото на белом). */
+  --good:#137a3a; --bad:#be123c; --warn:#7d6a00; --info:#1d4ed8;
+  --accent:#155e75; --accent-dim:#0e7490; --violet:#6d28d9;
+  --toggle-edge:#00000024;
+}
+
+/* Видно только скринридеру: подписи таблиц. Не display:none и не visibility:hidden —
+   те убирают элемент и из озвучки тоже. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* Горизонтальный скролл таблиц был без единого признака: на 390px таблица шире экрана
+   (min-width 520), и что её можно листать, приходилось угадывать. Классический приём на
+   background-attachment: тени у краёв «прилипают» к рамке, градиенты-перекрытия едут вместе с
+   содержимым и прячут тень, когда листать больше некуда. Без JS. */
+/* Удвоенный класс — не украшение: app.css подключён ДО инлайнового <style> страницы,
+   и её собственное .table-wrap{background:var(--surface)} перебивало бы это правило.
+   Специфичность 0,2,0 против 0,1,0 решает вопрос без !important. */
+.table-wrap.table-wrap{
+  background:
+    linear-gradient(to right, var(--surface) 30%, transparent),
+    linear-gradient(to left,  var(--surface) 30%, transparent),
+    radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.28), transparent),
+    radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.28), transparent);
+  background-position: 0 0, 100% 0, 0 0, 100% 0;
+  background-repeat: no-repeat;
+  background-size: 34px 100%, 34px 100%, 14px 100%, 14px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+
+/* Шапка-документ («Обратная связь · Алексей Обухов — Аналитика · на основе N дней») занимала
+   163 px = 21% первого экрана телефона и не несла информации для единственного пользователя:
+   собственное имя — константа, дата дублируется полосой свежести, источники — футером.
+   Решение Алексея 22.07: одна строка — время сборки слева, кнопка темы справа. */
+.hero.hero{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:calc(6px + env(safe-area-inset-top,0px)) 14px 6px;
+  min-height:44px; text-align:left; background:var(--surface); 
+}
+.appbar-when{font-size:13px; font-weight:600; color:var(--text-3); letter-spacing:.2px}
+/* кнопка темы переезжает в полосу: перестаёт висеть поверх контента */
+.hero .theme-toggle{position:static; top:auto; right:auto; flex:0 0 auto}
+
+/* Полоса честности: приложение показывает прошлое, и обязано это признавать.
+   Липнет к верху, не перекрывает контент (сдвигает его), уходит сама, когда данные свежие. */
+.freshness{
+  position:sticky; top:0; z-index:1100;
+  display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;
+  padding:calc(8px + env(safe-area-inset-top,0px)) 14px 8px;
+  font-size:13px; font-weight:600; line-height:1.35; text-align:center;
+}
+.freshness.off  {background:#e9456020; color:var(--bad);  border-bottom:1px solid #e9456040}
+.freshness.stale{background:#facc1520; color:var(--warn); border-bottom:1px solid #facc1540}
+.freshness-btn{
+  font:inherit; padding:4px 14px; border-radius:999px; cursor:pointer;
+  background:var(--surface); color:var(--text); border:1px solid var(--line-2);
+  min-height:44px;                                /* было 32 — ниже HIG/WCAG-минимума зоны нажатия */
+}
+
+/* ---- Retrofit: recolor generator-emitted inline/SVG neutrals in light mode ----
+   These blocks live between HTML markers and are re-emitted by the Python fleet
+   with baked-in dark hexes; we override by value so no generator change is needed.
+   Semantic hues (#e94560 red / #22c55e green / #f59e0b amber …) are left alone —
+   they read on both themes. */
+/* Цвет текста, который генераторы печатают литералом. Пока они не перешли на токены
+   (этап 6 плана), тема правит их ПО ЗНАЧЕНИЮ — это же лечит и уже напечатанные строки
+   недельной таблицы, которые append-only и не перерисовываются.
+   Карта и её обоснование — contrast.py THEME_MAP; contrast.py --css проверяет, что здесь
+   реализовано всё, что карта обещает. Числа в комментариях — было → стало. */
+
+/* ── светлая тема ─────────────────────────────────────────────────────────── */
+/* нейтрали */
+:root[data-theme="light"] [style*="color:#fff"]{color:var(--text-hi)!important}
+:root[data-theme="light"] [style*="color:#e6e6e6"]{color:var(--text)!important}      /* 1.25 → 12.7 */
+:root[data-theme="light"] [style*="color:#ccccdd"]{color:var(--text-2)!important}
+:root[data-theme="light"] [style*="color:#aaaacc"]{color:var(--text-2)!important}
+:root[data-theme="light"] [style*="color:#6666aa"]{color:var(--text-3)!important}
+:root[data-theme="light"] [style*="color:#8888bb"]{color:var(--text-3)!important}
+:root[data-theme="light"] [style*="color:#8888aa"]{color:var(--text-3)!important}
+/* семантика — светофор, которым читаются таблицы */
+:root[data-theme="light"] [style*="color:#22c55e"]{color:var(--good)!important}      /* 2.28 → 5.42 */
+:root[data-theme="light"] [style*="color:#f59e0b"]{color:var(--warn)!important}      /* 2.15 → 5.93 */
+:root[data-theme="light"] [style*="color:#fbbf24"]{color:var(--warn)!important}      /* 1.67 → 5.93 */
+:root[data-theme="light"] [style*="color:#e94560"]{color:var(--bad)!important}       /* 3.83 → 6.29 */
+:root[data-theme="light"] [style*="color:#3b82f6"]{color:var(--info)!important}      /* 3.68 → 6.70 */
+:root[data-theme="light"] [style*="color:#60a5fa"]{color:var(--info)!important}      /* 2.54 → 6.70 */
+:root[data-theme="light"] [style*="color:#22d3ee"]{color:var(--accent)!important}    /* 1.81 → 7.27 */
+:root[data-theme="light"] [style*="color:#06b6d4"]{color:var(--accent)!important}
+:root[data-theme="light"] [style*="color:#0891b2"]{color:var(--accent)!important}
+:root[data-theme="light"] [style*="color:#a78bfa"]{color:var(--violet)!important}    /* 2.72 → 7.10 */
+
+/* ── тёмная тема ──────────────────────────────────────────────────────────── */
+/* Единственный провал тёмной темы — цвет подписей, а им набраны все честные оговорки
+   («из первичного анализа», «месяц идёт, по 22.07»). */
+:root[data-theme="dark"] [style*="color:#6666aa"]{color:var(--text-3)!important}     /* 3.46 → 5.57 */
+:root[data-theme="dark"] [style*="color:#8888aa"]{color:var(--text-3)!important}
+:root[data-theme="dark"] [style*="color:#8888bb"]{color:var(--text-3)!important}
+
+/* Жёлтый светофора в тёмной теме — ярко-жёлтый (yellow-400 #facc15) вместо оранжевого
+   amber #f59e0b. Выбор Алексея 23.07: «жёлтый жёлтым, ярче, ближе к золоту». Свет остаётся
+   AA-#8a5a00 (яркий жёлтый на белом не читается). Генераторы по-прежнему печатают #f59e0b/
+   #fbbf24 — тема правит ПО ЗНАЧЕНИЮ (правило 1), это же ловит append-only строки недельной
+   таблицы. На #0f0f13 #facc15 даёт ~11:1. Карта — contrast.py THEME_MAP["dark"]. */
+:root[data-theme="dark"] [style*="color:#f59e0b"]{color:#facc15!important}
+:root[data-theme="dark"] [style*="color:#fbbf24"]{color:#facc15!important}
+/* столбцы графиков: fill — презентационный атрибут, перебивается без !important */
+:root[data-theme="dark"] svg [fill="#f59e0b"]{fill:#facc15}
+/* классовые теги/алерты живут в <style> страницы (подключён ПОСЛЕ app.css); специфичность
+   0,3,0 у :root[data-theme] .class бьёт их 0,1,0 без !important */
+:root[data-theme="dark"] .tag-yellow{color:#facc15; background:#facc1520; border-color:#facc1540}
+:root[data-theme="dark"] .alert-yellow{background:#facc1512; border-color:#facc1540}
+
+/* inline note-box surfaces/borders (e.g. background:#1a1a2e; border:1px solid #ffffff0d) */
+:root[data-theme="light"] [style*="background:#1a1a2e"]{background:var(--surface-2)!important}
+:root[data-theme="light"] [style*="solid #ffffff0d"]{border-color:var(--line-soft)!important}
+
+/* SVG chart chrome — fill/stroke are presentation attributes (lowest priority),
+   so a plain selector overrides them; no !important needed. */
+:root[data-theme="light"] svg text[fill="#6666aa"]{fill:var(--text-3)}
+:root[data-theme="light"] svg [fill="#fff"],
+:root[data-theme="light"] svg [fill="#ffffff"]{fill:#334155}
+:root[data-theme="light"] svg [stroke="#ffffff10"],
+:root[data-theme="light"] svg [stroke="#ffffff14"],
+:root[data-theme="light"] svg [stroke="#ffffff18"]{stroke:#00000018}
+:root[data-theme="light"] svg [fill="#ffffff10"],
+:root[data-theme="light"] svg [fill="#ffffff12"],
+:root[data-theme="light"] svg [fill="#ffffff14"]{fill:#0000000d}
+
+/* Светофор в СВЕТЛОЙ теме — жёлтое золото вместо оранжевого. Текст warn идёт через
+   var(--warn)=#7d6a00 (выше). Здесь — то, что мимо var: столбцы графиков (fill) и классовые
+   теги/алерты (их текст #fbbf24 на белом давал 1.67:1 — латентный баг, чинится заодно). */
+:root[data-theme="light"] svg [fill="#f59e0b"]{fill:#c9970a}   /* бар: золото, крупная заливка терпит ~2.9:1 как оранжевая раньше */
+:root[data-theme="light"] .tag-yellow{color:#7d6a00; background:#7d6a0018; border-color:#7d6a0040}
+:root[data-theme="light"] .alert-yellow{background:#7d6a0012; border-color:#7d6a0040}
+
+/* ---- Floating theme toggle ---- */
+.theme-toggle{
+  position:fixed; top:calc(12px + env(safe-area-inset-top,0px)); right:14px;
+  width:44px; height:44px; border-radius:50%;   /* HIG: минимальная зона нажатия */
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; line-height:1; cursor:pointer;
+  background:var(--surface); color:var(--text);
+  border:1px solid var(--toggle-edge);
+  box-shadow:0 3px 14px #0000004a, 0 0 0 1px var(--toggle-edge);
+  -webkit-backdrop-filter:saturate(160%) blur(10px); backdrop-filter:saturate(160%) blur(10px);
+  z-index:1100; user-select:none; -webkit-tap-highlight-color:transparent;
+  transition:transform .15s ease, background .2s ease, border-color .2s ease;
+}
+.theme-toggle:active{transform:scale(0.9)}
