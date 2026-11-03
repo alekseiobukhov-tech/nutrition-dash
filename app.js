@@ -91,6 +91,31 @@
     });
   }
 
+  // Only wide timeline SVGs need scrolling. Laboratory gauges and calorie rings stay fitted.
+  function prepareCharts(screen) {
+    screen.querySelectorAll('.table-wrap').forEach(function (wrap) {
+      var svg = wrap.querySelector(':scope > svg');
+      if (!svg || !svg.viewBox || svg.viewBox.baseVal.width < 600) return;
+      wrap.classList.add('chart-scroll');
+      wrap.setAttribute('role', 'region');
+      wrap.setAttribute('aria-label', 'График: прокручивайте для просмотра всего периода');
+      wrap.tabIndex = 0;
+      var hint = wrap.nextElementSibling;
+      if (!hint || !hint.classList.contains('chart-hint')) {
+        hint = document.createElement('p');
+        hint.className = 'chart-hint';
+        hint.textContent = '↔ Проведите по графику, чтобы посмотреть весь период';
+        wrap.parentNode.insertBefore(hint, wrap.nextSibling);
+      }
+      var overflow = wrap.scrollWidth > wrap.clientWidth + 1;
+      hint.hidden = !overflow;
+      if (overflow && !wrap.dataset.chartPositioned) {
+        wrap.scrollLeft = wrap.scrollWidth - wrap.clientWidth;
+        wrap.dataset.chartPositioned = '1';
+      }
+    });
+  }
+
   function build() {
     var container = document.querySelector(".container");
     if (!container || container.dataset.screensReady) return;
@@ -197,8 +222,12 @@
       // адрес держим в синхроне без засорения истории — чтобы ярлык подсвечивал свою вкладку
       try { if (location.hash !== "#" + id) history.replaceState(null, "", "#" + id); } catch (e) {}
       window.scrollTo(0, 0);
+      prepareCharts(screens[id]);
     }
     window.__showScreen = show;
+    window.addEventListener("resize", function () {
+      prepareCharts(screens[fromHash() || "obzor"]);
+    });
     // хэш при запуске (ярлык/закладка) → эта вкладка, иначе «Обзор»; смена хэша на лету тоже ведёт
     window.addEventListener("hashchange", function () { var h = fromHash(); if (h) show(h); });
     show(fromHash() || "obzor");

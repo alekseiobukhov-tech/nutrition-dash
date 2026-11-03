@@ -93,9 +93,9 @@ details.collapse > summary:active { transform: scale(.99); }
 details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 
 /* ---- Overview bento ---- */
-.bento { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 16px 14px; }
+.bento { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 16px 14px; }
 .tile {
-  position: relative; grid-column: span 1;
+  position: relative; grid-column: span 1; min-width: 0;
   background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
   padding: 16px; display: flex; flex-direction: column; gap: 6px;
   text-align: left; font-family: inherit; cursor: pointer;
@@ -104,8 +104,8 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 }
 .tile.wide { grid-column: 1 / -1; }
 .tile:active { transform: scale(.98); border-color: var(--accent); }
-.tile .eyebrow { display: flex; align-items: center; gap: 6px; font: 700 11px/1.4 inherit; letter-spacing: 1px; text-transform: uppercase; color: var(--text-2); }
-.tile .kpi { font: 800 30px/1 inherit; color: var(--text-hi); letter-spacing: -.01em; }
+.tile .eyebrow { display: flex; align-items: center; gap: 6px; font-family: inherit; font-size: 11px; font-weight: 700; line-height: 1.4; padding-right: 14px; overflow-wrap: anywhere; letter-spacing: 1px; text-transform: uppercase; color: var(--text-2); }
+.tile .kpi { font-family: inherit; font-size: 30px; font-weight: 800; line-height: 1.1; overflow-wrap: anywhere; color: var(--text-hi); letter-spacing: -.01em; }
 .tile .kpi small { font-size: 14px; font-weight: 600; color: var(--text-2); margin-left: 2px; }
 .tile .sub { font-size: 12px; color: var(--text-2); }
 .tile .chev { position: absolute; top: 14px; right: 14px; font-size: 18px; color: var(--text-3); }
@@ -137,7 +137,7 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
   --tabbar-bg:rgba(14,14,18,0.72);
   --toggle-edge:#ffffff2b;
   /* семантика: в тёмной теме легаси-значения проходят AA (4.69–8.37).
-     --warn — ярко-жёлтый yellow-400 (выбор Алексея 23.07: «жёлтый жёлтым, ближе к золоту»),
+     --warn — ярко-жёлтый yellow-400 (выбор владельца 23.07: «жёлтый жёлтым, ближе к золоту»),
      заменил оранжевый amber #f59e0b; на #0f0f13 даёт ~11:1. Инлайн-литерал светофора
      генераторы всё ещё печатают #f59e0b — его правит блок «тёмная тема» ниже по значению. */
   --good:#22c55e; --warn:#facc15; --bad:#e94560; --info:#3b82f6;
@@ -158,7 +158,7 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
   --line-hair:#00000010;
   --tabbar-bg:rgba(248,250,253,0.78);
   /* проверено на обоих светлых фонах (#fff и #eef1f6), оба ≥4.5:1 */
-  /* --warn: жёлтое золото (тон 51°), а не оранжево-коричневый #8a5a00 (39°) — выбор Алексея
+  /* --warn: жёлтое золото (тон 51°), а не оранжево-коричневый #8a5a00 (39°) — выбор владельца
      23.07 «хочу жёлтые в светлой». Ярче на белом мелкий текст не читается (потолок ~4.5:1);
      #7d6a00 = 5.34/4.72. Свет и тьма теперь один семантический смысл, но разные значения:
      тьма #facc15 (яркий жёлтый на чёрном), свет #7d6a00 (золото на белом). */
@@ -191,14 +191,14 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
   background-attachment: local, local, scroll, scroll;
 }
 
-/* Шапка-документ («Обратная связь · Алексей Обухов — Аналитика · на основе N дней») занимала
+/* Шапка-документ («Обратная связь · владелец Обухов — Аналитика · на основе N дней») занимала
    163 px = 21% первого экрана телефона и не несла информации для единственного пользователя:
    собственное имя — константа, дата дублируется полосой свежести, источники — футером.
-   Решение Алексея 22.07: одна строка — время сборки слева, кнопка темы справа. */
+   Решение владельца 22.07: одна строка — время сборки слева, кнопка темы справа. */
 .hero.hero{
   display:flex; align-items:center; justify-content:space-between; gap:12px;
   padding:calc(6px + env(safe-area-inset-top,0px)) 14px 6px;
-  min-height:44px; text-align:left; background:var(--surface); 
+  min-height:44px; text-align:left; background:var(--surface);
 }
 .appbar-when{font-size:13px; font-weight:600; color:var(--text-3); letter-spacing:.2px}
 /* кнопка темы переезжает в полосу: перестаёт висеть поверх контента */
@@ -260,7 +260,7 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 :root[data-theme="dark"] [style*="color:#8888bb"]{color:var(--text-3)!important}
 
 /* Жёлтый светофора в тёмной теме — ярко-жёлтый (yellow-400 #facc15) вместо оранжевого
-   amber #f59e0b. Выбор Алексея 23.07: «жёлтый жёлтым, ярче, ближе к золоту». Свет остаётся
+   amber #f59e0b. Выбор владельца 23.07: «жёлтый жёлтым, ярче, ближе к золоту». Свет остаётся
    AA-#8a5a00 (яркий жёлтый на белом не читается). Генераторы по-прежнему печатают #f59e0b/
    #fbbf24 — тема правит ПО ЗНАЧЕНИЮ (правило 1), это же ловит append-only строки недельной
    таблицы. На #0f0f13 #facc15 даёт ~11:1. Карта — contrast.py THEME_MAP["dark"]. */
@@ -310,3 +310,16 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
   transition:transform .15s ease, background .2s ease, border-color .2s ease;
 }
 .theme-toggle:active{transform:scale(0.9)}
+
+/* Keep labels and values on separate lines; the generator emits spans. */
+.score-card .area, .score-card .delta { display: block; }
+.score-card { min-width: 0; overflow-wrap: anywhere; }
+
+/* Wide time-series retain readable axes on a phone. Compact gauges/rings are untouched. */
+.chart-scroll > svg { display: block; }
+.chart-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chart-hint { color: var(--text-3); font-size: 12px; line-height: 1.5; margin: 6px 4px 16px; }
+.chart-hint[hidden] { display: none; }
+@media (max-width: 760px) {
+  .chart-scroll > svg { min-width: 720px; }
+}
