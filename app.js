@@ -92,6 +92,52 @@
   }
 
   // Only wide timeline SVGs need scrolling. Laboratory gauges and calorie rings stay fitted.
+  // Dates describe the displayed value, never the publication timestamp.
+  function freshnessInfo(stamp, now) {
+    stamp = stamp || {};
+    now = now || new Date();
+    var match = /^(\d{4})-(\d{2})-(\d{2})(?:$|T| )/.exec(stamp.date || "");
+    var offline = navigator.onLine === false;
+    if (!match) return { text: "Дата данных не указана" + (offline ? " · офлайн" : ""), state: "unknown" };
+    var y = +match[1], m = +match[2], d = +match[3];
+    var day = new Date(Date.UTC(y, m - 1, d));
+    if (day.getUTCFullYear() !== y || day.getUTCMonth() !== m - 1 || day.getUTCDate() !== d) {
+      return { text: "Дата данных не указана", state: "unknown" };
+    }
+    var age = Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - day.getTime()) / 86400000);
+    var date = match[3] + "." + match[2] + "." + match[1];
+    var labels = { measurement: "Замер", night: "Ночь", workout: "Последняя тренировка", blood_draw: "Забор", diary: "Дневник", revision: "Редакция", window: "Данные по", calculation: "Расчёт" };
+    var text = (labels[stamp.kind] || "Данные") + " " + date;
+    var state = "dated";
+    if (age < 0) { text += " · дата в будущем"; state = "unknown"; }
+    else if (stamp.kind === "diary" && stamp.has_data === false) { text += " · записей нет"; state = "missing"; }
+    else if (typeof stamp.max_age_days === "number" && age > stamp.max_age_days) {
+      text += " · " + age + " дн. назад";
+      state = "stale";
+    }
+    if (offline) text += " · офлайн";
+    return { text: text, state: state };
+  }
+
+  function attachFreshness(parent, stamp) {
+    var line = document.createElement("div");
+    line.className = "data-freshness";
+    line.dataset.stamp = JSON.stringify(stamp || {});
+    parent.appendChild(line);
+    return line;
+  }
+
+  function updateCardFreshness() {
+    document.querySelectorAll(".data-freshness[data-stamp]").forEach(function (line) {
+      var stamp;
+      try { stamp = JSON.parse(line.dataset.stamp); } catch (e) { stamp = {}; }
+      var info = freshnessInfo(stamp);
+      line.textContent = info.text;
+      line.dataset.state = info.state;
+    });
+  }
+  window.HealthFreshness = { describe: freshnessInfo, update: updateCardFreshness };
+
   function prepareCharts(screen) {
     screen.querySelectorAll('.table-wrap').forEach(function (wrap) {
       var svg = wrap.querySelector(':scope > svg');
@@ -150,13 +196,21 @@
       var grid = document.createElement("div");
       grid.className = "bento";
       tiles.forEach(function (t) {
+        // Relative labels baked into HTML go stale in offline copies; the dated line is dynamic.
+        var sub = t.sub || "";
+        if (t.freshness && t.freshness.kind === "measurement") sub = sub.replace(/^замер (?:сегодня|вчера|\d+ дн\. назад)(?: · )?/, "");
+        if (t.freshness && t.freshness.kind === "night") sub = sub.replace(/^прошлая ночь · /, "");
+        if (t.freshness && t.freshness.kind === "workout") sub = sub.replace(/^последняя \d{2}\.\d{2}$/, "");
+        if (t.freshness && t.freshness.kind === "blood_draw") sub = sub.replace(/ · \d{2}\.\d{2}\.\d{4}$/, "");
         var tile = document.createElement("button");
         tile.className = "tile" + (t.span === 2 ? " wide" : "") + (t.color ? " c-" + t.color : "");
         tile.innerHTML =
           '<div class="eyebrow">' + (t.icon || "") + " " + t.label + "</div>" +
           '<div class="kpi">' + t.value + (t.unit ? '<small>' + t.unit + "</small>" : "") + "</div>" +
-          (t.sub ? '<div class="sub">' + t.sub + "</div>" : "") +
+          (sub ? '<div class="sub">' + sub + "</div>" : "") +
           '<span class="chev">›</span>';
+        attachFreshness(tile, t.freshness);
+        // Old reports without metadata remain visibly unknown until their generator runs.
         tile.addEventListener("click", function () { show(t.tab); });
         grid.appendChild(tile);
       });
@@ -170,6 +224,38 @@
       var grades = document.querySelector(".hero .score-grid");
       if (grades) { grid.parentNode.insertBefore(grades, grid.nextSibling); }
     }
+
+    var sectionStamps = {};
+    blobs.forEach(function (blob) {
+      try {
+        var data = JSON.parse(blob.textContent);
+        if (data.tab && data.freshness) (sectionStamps[data.tab] || (sectionStamps[data.tab] = [])).push(data.freshness);
+      } catch (e) {}
+    });
+    document.querySelectorAll(".source-stamp[data-screen]").forEach(function (blob) {
+      try { (sectionStamps[blob.dataset.screen] || (sectionStamps[blob.dataset.screen] = [])).push(JSON.parse(blob.textContent)); } catch (e) {}
+    });
+    ["pitanie", "vosst", "analizy", "protokol"].forEach(function (id) {
+      var panel = document.createElement("div");
+      panel.className = "source-dates";
+      panel.setAttribute("aria-label", "Даты данных раздела");
+      (sectionStamps[id] || [{}]).forEach(function (stamp) { attachFreshness(panel, stamp); });
+      screens[id].insertBefore(panel, screens[id].firstChild);
+    });
+    document.querySelectorAll(".score-card").forEach(function (card) {
+      var line = document.createElement("div");
+      line.className = "score-date";
+      var generated = generatedAt();
+      line.textContent = generated ? "Отчёт от " + generated.toLocaleDateString("ru-RU") : "Дата отчёта не указана";
+      card.appendChild(line);
+    });
+    document.querySelectorAll(".cards .card").forEach(function (card) {
+      var group = card.closest(".cards");
+      var stamp = { kind: group.dataset.recordKind, date: group.dataset.recordDate };
+      if (group.dataset.maxAge) stamp.max_age_days = +group.dataset.maxAge;
+      attachFreshness(card, stamp);
+    });
+    updateCardFreshness();
 
     // progressive disclosure: collapse heavy tables inside detail screens
     ["pitanie", "vosst", "analizy", "protokol"].forEach(function (sid) {
@@ -251,8 +337,11 @@
     });
   }
 
-  window.addEventListener("online", freshnessBar);
-  window.addEventListener("offline", freshnessBar);
+  window.addEventListener("online", function () { freshnessBar(); updateCardFreshness(); });
+  window.addEventListener("offline", function () { freshnessBar(); updateCardFreshness(); });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) updateCardFreshness(); });
+  // Re-evaluate cached cards across midnight without changing their measurement dates.
+  window.setInterval(updateCardFreshness, 60000);
 
   function start() { build(); freshnessBar(); }
 

@@ -323,3 +323,11 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 @media (max-width: 760px) {
   .chart-scroll > svg { min-width: 720px; }
 }
+
+/* Dates of displayed records, independent of the report's publication date. */
+.data-freshness,.score-date { font-size:11px; line-height:1.45; color:var(--text-2); overflow-wrap:anywhere; }
+.tile .data-freshness { margin-top:5px; }
+.data-freshness[data-state="stale"],.data-freshness[data-state="missing"] { color:var(--warn); }
+.data-freshness[data-state="unknown"] { color:var(--text-2); }
+.source-dates { display:flex; flex-wrap:wrap; gap:6px 16px; margin:0 0 16px; padding:10px 12px; background:var(--surface-2); border:1px solid var(--line-hair); border-radius:10px; }
+.score-date { margin-top:6px; font-weight:400; }
