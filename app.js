@@ -107,6 +107,7 @@
     var age = Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - day.getTime()) / 86400000);
     var date = match[3] + "." + match[2] + "." + match[1];
     var labels = { measurement: "Замер", night: "Ночь", workout: "Последняя тренировка", blood_draw: "Забор", diary: "Дневник", revision: "Редакция", window: "Данные по", calculation: "Расчёт" };
+    labels.review = 'Разбор';
     var text = (labels[stamp.kind] || "Данные") + " " + date;
     var state = "dated";
     if (age < 0) { text += " · дата в будущем"; state = "unknown"; }
@@ -188,6 +189,29 @@
     });
     SCREENS.forEach(function (s) { container.appendChild(screens[s.id]); });
 
+    // A saved review supersedes the old static advice. Keep the original material
+    // available as history rather than displaying contradictory instructions together.
+    var savedReview = screens.protokol.querySelector('.med-review');
+    if (savedReview) {
+      var activeSection = savedReview.closest('.section');
+      if (activeSection) {
+        var heading = activeSection.querySelector('.sec-title');
+        if (heading) heading.textContent = 'Препараты и добавки: разбор для врача';
+        var subtitle = activeSection.querySelector('.sec-sub');
+        if (subtitle) subtitle.textContent = 'Приоритеты пересмотра, вопросы о перерывах и уточнения';
+        var archive = document.createElement('details');
+        archive.className = 'collapse protocol-history';
+        var archiveTitle = document.createElement('summary');
+        archiveTitle.textContent = 'Архив прежних рекомендаций — требует повторной проверки';
+        archive.appendChild(archiveTitle);
+        screens.protokol.querySelectorAll(':scope > .section').forEach(function (section) {
+          if (section !== activeSection) archive.appendChild(section);
+        });
+        screens.protokol.insertBefore(activeSection, screens.protokol.firstChild);
+        if (archive.children.length > 1) screens.protokol.appendChild(archive);
+      }
+    }
+
     // Overview bento: KPI tiles built from the .ovkpi blobs emitted by the chart generators
     var blobs = Array.prototype.slice.call(document.querySelectorAll(".ovkpi"));
     if (blobs.length) {
@@ -235,6 +259,9 @@
     document.querySelectorAll(".source-stamp[data-screen]").forEach(function (blob) {
       try { (sectionStamps[blob.dataset.screen] || (sectionStamps[blob.dataset.screen] = [])).push(JSON.parse(blob.textContent)); } catch (e) {}
     });
+    if (savedReview && savedReview.dataset.reviewedOn) {
+      sectionStamps.protokol = [{kind: 'review', date: savedReview.dataset.reviewedOn}];
+    }
     ["pitanie", "vosst", "analizy", "protokol"].forEach(function (id) {
       var panel = document.createElement("div");
       panel.className = "source-dates";
