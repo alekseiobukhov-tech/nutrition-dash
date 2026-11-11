@@ -163,6 +163,65 @@
     });
   }
 
+  function setupVisit(section) {
+    if (!section || section.dataset.visitReady) return;
+    var panel = section.querySelector('.visit-prep');
+    if (!panel) return;
+    section.dataset.visitReady = '1';
+    var cards = Array.from(section.querySelectorAll('.med-review-card'));
+    var preview = panel.querySelector('.visit-preview');
+    var area = preview.querySelector('textarea');
+    var status = panel.querySelector('.visit-status');
+    var prepare = panel.querySelector('[data-visit-prepare]');
+    function selected() { return cards.filter(function (c) { var box = c.querySelector('[data-visit-select]'); return box && box.checked; }); }
+    function changed() {
+      var count = selected().length;
+      preview.hidden = true; area.value = '';
+      prepare.disabled = count === 0;
+      status.textContent = 'Выбрано позиций: ' + count + '. Фильтр не меняет выбор.';
+    }
+    cards.forEach(function (card) {
+      var box = card.querySelector('[data-visit-select]');
+      if (box) box.addEventListener('change', changed);
+    });
+    panel.querySelectorAll('[data-review-filter]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var first = button.dataset.reviewFilter === 'first';
+        cards.forEach(function (card) { card.hidden = first && card.dataset.reviewPriority !== '1'; });
+        panel.querySelectorAll('[data-review-filter]').forEach(function (b) { b.setAttribute('aria-pressed', String(b === button)); });
+      });
+    });
+    prepare.addEventListener('click', function () {
+      var rows = selected();
+      if (!rows.length) return;
+      area.value = panel.querySelector('.visit-summary-header').content.textContent + '\n\n' + rows.map(function (card, i) {
+        return (i + 1) + '. ' + card.querySelector('.visit-summary-part').content.textContent;
+      }).join('\n\n');
+      preview.hidden = false;
+      status.textContent = 'Сводка подготовлена по данным приложения на ' + panel.dataset.visitDate + '. Выбрано позиций: ' + rows.length + '.';
+      area.focus({preventScroll: true});
+      area.setSelectionRange(0, 0); area.scrollTop = 0;
+    });
+    panel.querySelector('[data-visit-copy]').addEventListener('click', async function () {
+      try {
+        await navigator.clipboard.writeText(area.value);
+        status.textContent = 'Сводка скопирована в буфер обмена.';
+      } catch (e) {
+        area.focus(); area.select();
+        status.textContent = 'Текст выделен. Скопируйте его вручную.';
+      }
+    });
+    panel.querySelector('[data-visit-download]').addEventListener('click', function () {
+      var url = URL.createObjectURL(new Blob([area.value], {type: 'text/plain;charset=utf-8'}));
+      var link = document.createElement('a');
+      link.href = url; link.download = 'visit-summary-' + panel.dataset.visitDate + '.txt';
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      status.textContent = 'Файл подготовлен для сохранения на устройстве.';
+    });
+    changed();
+  }
+
   function build() {
     var container = document.querySelector(".container");
     if (!container || container.dataset.screensReady) return;
@@ -192,6 +251,7 @@
     // A saved review supersedes the old static advice. Keep the original material
     // available as history rather than displaying contradictory instructions together.
     var savedReview = screens.protokol.querySelector('.med-review');
+    setupVisit(savedReview);
     if (savedReview) {
       var activeSection = savedReview.closest('.section');
       if (activeSection) {
