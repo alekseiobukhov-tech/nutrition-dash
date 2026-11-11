@@ -51,6 +51,7 @@ body { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
 }
 .tab {
   position: relative; flex: 1;
+  min-width: 0; padding-left: 2px; padding-right: 2px;
   min-height: 44px;                               /* HIG/WCAG 2.5.5: зона нажатия ≥44px (бар и так 68) */
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   background: none; border: none; color: var(--text-3);
@@ -331,3 +332,6 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 .data-freshness[data-state="unknown"] { color:var(--text-2); }
 .source-dates { display:flex; flex-wrap:wrap; gap:6px 16px; margin:0 0 16px; padding:10px 12px; background:var(--surface-2); border:1px solid var(--line-hair); border-radius:10px; }
 .score-date { margin-top:6px; font-weight:400; }
+
+/* Keep six navigation labels distinct on compact phones. */
+@media (max-width:360px){.tab-l{font-size:9px;letter-spacing:0}}

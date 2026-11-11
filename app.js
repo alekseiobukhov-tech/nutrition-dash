@@ -1,5 +1,5 @@
 /* Health Dashboard — client-side screen navigation (no backend).
-   Groups the report's existing sections into 5 tab-screens at runtime, using the
+   Groups the report's existing sections into tab-screens at runtime, using the
    HTML marker comments as stable boundaries (they survive report regeneration).
    Keeps the PWA offline: pure DOM, no data fetching. */
 (function () {
@@ -14,7 +14,8 @@
     // internal (screen-vosst) and renaming it buys nothing but churn.
     { id: "vosst",    icon: "📈", label: "Динамика" },
     { id: "analizy",  icon: "🔬", label: "Анализы" },
-    { id: "protokol", icon: "💊", label: "Протокол" }
+    { id: "protokol", icon: "💊", label: "Протокол" },
+    { id: "medcard", icon: "🗂", label: "Медкарта" }
   ];
 
   // A boundary comment → the screen everything after it belongs to (until the next boundary).
@@ -247,6 +248,21 @@
       }
     });
     SCREENS.forEach(function (s) { container.appendChild(screens[s.id]); });
+    var medicalRecord = container.querySelector('.medical-record');
+    if (medicalRecord) screens.medcard.appendChild(medicalRecord);
+    else screens.medcard.textContent = 'Медицинская карта ещё не поступила в эту версию отчёта. Обновите приложение.';
+    if (medicalRecord) {
+      var search = medicalRecord.querySelector('[data-medical-search]');
+      if (search) search.addEventListener('input', function () {
+        var query = search.value.trim().toLocaleLowerCase();
+        var visible = 0;
+        medicalRecord.querySelectorAll('.medical-draw,.medical-note,.medical-visit,.medical-current,.medical-treatment').forEach(function (block) {
+          block.hidden = !!query && !block.textContent.toLocaleLowerCase().includes(query);
+          if (!block.hidden) visible++;
+        });
+        medicalRecord.querySelector('[data-medical-found]').textContent = query ? 'Найдено блоков истории: ' + visible : '';
+      });
+    }
 
     // A saved review supersedes the old static advice. Keep the original material
     // available as history rather than displaying contradictory instructions together.
