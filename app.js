@@ -362,7 +362,8 @@
         group.hidden = !inGroup;
       });
       more.hidden = found <= visible;
-      status.textContent = found ? 'Показано записей: ' + visible + ' из ' + found + '. Сначала новые; даты без уточнения — отдельно.' : 'Нет записей для выбранного фильтра и поиска.';
+      status.textContent = found ? 'Показано записей: ' + visible + ' из ' + found + '. Сначала новые; даты без уточнения — отдельно.' :
+        (uncertain.checked ? 'Нет записей с вопросами к вам для выбранного раздела и поиска.' : 'Нет записей для выбранного фильтра и поиска.');
     }
     panel.querySelectorAll('[data-timeline-filter]').forEach(function (button) {
       button.addEventListener('click', function () {

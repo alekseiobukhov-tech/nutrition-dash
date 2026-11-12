@@ -349,6 +349,10 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 .medical-timeline button[aria-pressed="true"] { border-color:var(--accent,#22d3ee); }
 .medical-timeline-only { display:flex; align-items:center; gap:10px; min-height:44px; margin:10px 0; }
 .medical-timeline-only input { width:22px; height:22px; flex:0 0 22px; accent-color:var(--accent,#22d3ee); }
+.medical-question-badge { display:block; font-size:13px; color:var(--warning,#fbbf24); margin-top:7px; }
+.medical-record .medical-uncertainties,.medical-record .medical-source-checks { border-left:3px solid var(--warning,#fbbf24); }
+.medical-record .medical-source-notes { color:var(--text-2,#b7b7cf); background:var(--surface,#171726); }
+.medical-source-notes summary,.medical-no-questions,.medical-review-legend { font-size:14px; color:var(--text-2,#b7b7cf); }
 .tile .data-freshness { margin-top:5px; }
 .data-freshness[data-state="stale"],.data-freshness[data-state="missing"] { color:var(--warn); }
 .data-freshness[data-state="unknown"] { color:var(--text-2); }
