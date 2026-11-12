@@ -256,8 +256,10 @@
       if (search) search.addEventListener('input', function () {
         var query = search.value.trim().toLocaleLowerCase();
         var visible = 0;
-        medicalRecord.querySelectorAll('.medical-topic,.medical-draw,.medical-note,.medical-visit,.medical-current,.medical-treatment').forEach(function (block) {
-          block.hidden = !!query && !block.textContent.toLocaleLowerCase().includes(query);
+        medicalRecord.querySelectorAll('.medical-topic,.medical-document,.medical-draw,.medical-note,.medical-visit,.medical-current,.medical-treatment').forEach(function (block) {
+          var searchable = block.cloneNode(true);
+          searchable.querySelectorAll('script').forEach(function (node) { node.remove(); });
+          block.hidden = !!query && !searchable.textContent.toLocaleLowerCase().includes(query);
           if (!block.hidden) visible++;
         });
         medicalRecord.querySelector('[data-medical-found]').textContent = query ? 'Найдено блоков истории: ' + visible : '';
@@ -277,6 +279,25 @@
           if (parent.tagName === 'DETAILS') parent.open = true;
         }
         target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      });
+      medicalRecord.addEventListener('click', async function (event) {
+        var button = event.target.closest('[data-medical-download]');
+        if (!button || button.disabled) return;
+        var status = button.parentElement.querySelector('[data-document-status]');
+        button.disabled = true;
+        try {
+          var file = JSON.parse(document.getElementById('medical-file-' + button.dataset.medicalDownload).textContent);
+          var bytes = Uint8Array.from(atob(file.data), function (c) { return c.charCodeAt(0); });
+          var digest = await crypto.subtle.digest('SHA-256', bytes);
+          var sha = Array.from(new Uint8Array(digest), function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+          if (sha !== file.sha || !['application/pdf', 'image/jpeg', 'image/png'].includes(file.mime)) throw new Error('integrity');
+          var url = URL.createObjectURL(new Blob([bytes], { type: file.mime }));
+          var a = document.createElement('a'); a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+          status.textContent = ' Целостность проверена; оригинал передан браузеру для сохранения.';
+        } catch (error) {
+          status.textContent = ' Оригинал не удалось проверить или скачать. Повторите после обновления приложения.';
+        } finally { button.disabled = false; }
       });
     }
 
