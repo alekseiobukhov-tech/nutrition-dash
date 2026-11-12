@@ -1,6 +1,6 @@
 // Health Dashboard PWA service worker.
 // Network-first for the report (always fresh when online), cache fallback offline.
-const CACHE = 'health-8325a485be1a2146';
+const CACHE = 'health-d01aed485c9661e9';
 const SHELL = [
   'feedback_2026.html',
   'app.js',
@@ -36,4 +36,4 @@ self.addEventListener('fetch', (e) => {
   );
 });
 
-SHELL.push("app.css?v=4de13d737662", "app.js?v=e678cf98933d");
+SHELL.push("app.css?v=383195c8ace4", "app.js?v=b87ec7c1f558");

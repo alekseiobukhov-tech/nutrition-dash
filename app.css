@@ -327,6 +327,16 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 
 /* Dates of displayed records, independent of the report's publication date. */
 .data-freshness,.score-date { font-size:11px; line-height:1.45; color:var(--text-2); overflow-wrap:anywhere; }
+
+/* Selecting originals never changes the medical record or sends files anywhere. */
+.medical-package { padding:16px; margin:16px 0; border:1px solid var(--border,#ffffff20); border-radius:12px; overflow-wrap:anywhere; }
+.medical-package h4 { margin:0 0 12px; }
+.medical-package-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.medical-package button { font:inherit; min-height:44px; max-width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--border,#ffffff30); background:var(--surface,#171726); color:var(--text,#eee); cursor:pointer; }
+.medical-package button:disabled { opacity:.5; cursor:default; }
+.medical-package ul { padding-left:22px; }
+.medical-package-select { display:flex; align-items:center; gap:10px; min-height:44px; margin:8px 0; cursor:pointer; }
+.medical-package-select input { width:22px; height:22px; flex:0 0 22px; accent-color:var(--accent,#22d3ee); }
 .tile .data-freshness { margin-top:5px; }
 .data-freshness[data-state="stale"],.data-freshness[data-state="missing"] { color:var(--warn); }
 .data-freshness[data-state="unknown"] { color:var(--text-2); }

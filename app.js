@@ -223,6 +223,120 @@
     changed();
   }
 
+  async function originalBytes(record, id) {
+    var node = record.querySelector('[id="medical-file-' + id + '"]');
+    if (!node || !/^[a-f0-9]{20}$/.test(id)) throw new Error('missing-original');
+    var file = JSON.parse(node.textContent);
+    if (typeof file.data !== 'string' || file.data.length > 8 * 1024 * 1024 * 4 / 3 + 8 ||
+        typeof file.sha !== 'string' || !/^[a-f0-9]{64}$/.test(file.sha) || file.sha.slice(0, 20) !== id ||
+        typeof file.name !== 'string' || !['application/pdf', 'image/jpeg', 'image/png'].includes(file.mime)) throw new Error('invalid-original');
+    var bytes = Uint8Array.from(atob(file.data), function (c) { return c.charCodeAt(0); });
+    if (!bytes.length || bytes.length > 8 * 1024 * 1024) throw new Error('original-size');
+    var digest = await crypto.subtle.digest('SHA-256', bytes);
+    var sha = Array.from(new Uint8Array(digest), function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+    if (sha !== file.sha) throw new Error('original-integrity');
+    return {name: file.name, mime: file.mime, bytes: bytes};
+  }
+
+  function saveBlob(blob, name) {
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a'); link.href = url; link.download = name;
+    try { document.body.appendChild(link); link.click(); }
+    finally { link.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 60000); }
+  }
+
+  // ZIP method 0 preserves original PDF/image bytes. No library, network or compression worker.
+  function zipOriginals(files) {
+    if (!files.length || files.length > 65535) throw new Error('archive-count');
+    var table = new Uint32Array(256);
+    for (var n = 0; n < 256; n++) {
+      var value = n;
+      for (var bit = 0; bit < 8; bit++) value = (value >>> 1) ^ ((value & 1) ? 0xedb88320 : 0);
+      table[n] = value >>> 0;
+    }
+    var now = new Date();
+    var date = ((Math.max(1980, Math.min(2107, now.getFullYear())) - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+    var time = (now.getHours() << 11) | (now.getMinutes() << 5) | Math.floor(now.getSeconds() / 2);
+    var parts = [], directory = [], offset = 0, total = 0, directorySize = 0;
+    files.forEach(function (file, index) {
+      total += file.bytes.length;
+      if (total > 32 * 1024 * 1024) throw new Error('archive-size');
+      // Numbered flat paths avoid collisions, traversal, device names and case-folding issues.
+      var clean = file.name.replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069<>:"/\\|?*]/g, '_').replace(/[. ]+$/g, '') || 'document';
+      var suffix = /\.(pdf|png|jpe?g)$/i.exec(clean);
+      var extension = suffix ? suffix[0] : {'application/pdf': '.pdf', 'image/png': '.png', 'image/jpeg': '.jpg'}[file.mime];
+      clean = (suffix ? clean.slice(0, -extension.length) : clean).slice(0, 140) + extension;
+      var name = new TextEncoder().encode(String(index + 1).padStart(2, '0') + '-' + clean);
+      var crc = 0xffffffff;
+      for (var i = 0; i < file.bytes.length; i++) crc = (crc >>> 8) ^ table[(crc ^ file.bytes[i]) & 255];
+      crc = (crc ^ 0xffffffff) >>> 0;
+      var local = new Uint8Array(30 + name.length), l = new DataView(local.buffer);
+      l.setUint32(0, 0x04034b50, true); l.setUint16(4, 20, true); l.setUint16(6, 0x800, true);
+      l.setUint16(10, time, true); l.setUint16(12, date, true); l.setUint32(14, crc, true);
+      l.setUint32(18, file.bytes.length, true); l.setUint32(22, file.bytes.length, true); l.setUint16(26, name.length, true); local.set(name, 30);
+      var central = new Uint8Array(46 + name.length), c = new DataView(central.buffer);
+      c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x800, true);
+      c.setUint16(12, time, true); c.setUint16(14, date, true); c.setUint32(16, crc, true);
+      c.setUint32(20, file.bytes.length, true); c.setUint32(24, file.bytes.length, true); c.setUint16(28, name.length, true);
+      c.setUint32(42, offset, true); central.set(name, 46);
+      parts.push(local, file.bytes); directory.push(central);
+      offset += local.length + file.bytes.length; directorySize += central.length;
+    });
+    var end = new Uint8Array(22), e = new DataView(end.buffer);
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true);
+    e.setUint32(12, directorySize, true); e.setUint32(16, offset, true);
+    return new Blob(parts.concat(directory, [end]), {type: 'application/zip'});
+  }
+
+  function setupMedicalPackage(record) {
+    var panel = record.querySelector('[data-medical-package]');
+    if (!panel) return;
+    var boxes = Array.from(record.querySelectorAll('[data-medical-package-select]'));
+    var download = panel.querySelector('[data-medical-package-download]');
+    var list = panel.querySelector('[data-medical-package-list]');
+    var count = panel.querySelector('[data-medical-package-count]');
+    var status = panel.querySelector('[data-medical-package-status]');
+    var all = panel.querySelector('[data-medical-package-all]'), clear = panel.querySelector('[data-medical-package-clear]');
+    var busy = false;
+    function selected() { return boxes.filter(function (box) { return box.checked; }); }
+    function update() {
+      var chosen = selected(), size = chosen.reduce(function (sum, box) { return sum + Number(box.dataset.documentSize); }, 0);
+      count.textContent = 'Выбрано документов: ' + chosen.length + (chosen.length ? ' · ' + (size / 1024 / 1024).toFixed(2) + ' МБ' : '') + '.';
+      list.replaceChildren(); list.hidden = !chosen.length;
+      chosen.forEach(function (box) { var item = document.createElement('li'); item.textContent = box.dataset.documentName; list.appendChild(item); });
+      download.disabled = busy || !chosen.length; all.disabled = busy || chosen.length === boxes.length; clear.disabled = busy || !chosen.length;
+      boxes.forEach(function (box) { box.disabled = busy; });
+    }
+    boxes.forEach(function (box) {
+      box.checked = false; // No implicit carry-over or automatic inclusion after reopening.
+      box.addEventListener('change', function () { status.textContent = ''; update(); });
+    });
+    all.addEventListener('click', function () { boxes.forEach(function (box) { box.checked = true; }); status.textContent = ''; update(); });
+    clear.addEventListener('click', function () { boxes.forEach(function (box) { box.checked = false; }); status.textContent = ''; update(); });
+    download.addEventListener('click', async function () {
+      if (busy) return;
+      var chosen = selected(); if (!chosen.length) return;
+      busy = true; update(); status.textContent = 'Проверяю выбранные оригиналы и собираю пакет…';
+      try {
+        var files = [], ids = new Set(), total = 0;
+        for (var box of chosen) {
+          var id = box.dataset.medicalPackageSelect;
+          if (ids.has(id)) throw new Error('duplicate-original');
+          ids.add(id);
+          var file = await originalBytes(record, id);
+          if (file.name !== box.dataset.documentName || file.bytes.length !== Number(box.dataset.documentSize)) throw new Error('selection-changed');
+          total += file.bytes.length; if (total > 32 * 1024 * 1024) throw new Error('archive-size');
+          files.push(file);
+        }
+        saveBlob(zipOriginals(files), 'health-documents-' + new Date().toISOString().slice(0, 10) + '.zip');
+        status.textContent = 'Пакет из ' + files.length + ' документов передан браузеру для сохранения. Оригиналы проверены; файлы не защищены паролем.';
+      } catch (error) {
+        status.textContent = 'Пакет не скачан: не удалось проверить один из выбранных оригиналов или подготовить архив. Обновите приложение и повторите; при необходимости снимите выбор с недоступного файла.';
+      } finally { busy = false; update(); }
+    });
+    update();
+  }
+
   function build() {
     var container = document.querySelector(".container");
     if (!container || container.dataset.screensReady) return;
@@ -252,6 +366,7 @@
     if (medicalRecord) screens.medcard.appendChild(medicalRecord);
     else screens.medcard.textContent = 'Медицинская карта ещё не поступила в эту версию отчёта. Обновите приложение.';
     if (medicalRecord) {
+      setupMedicalPackage(medicalRecord);
       var search = medicalRecord.querySelector('[data-medical-search]');
       if (search) search.addEventListener('input', function () {
         var query = search.value.trim().toLocaleLowerCase();
@@ -286,14 +401,8 @@
         var status = button.parentElement.querySelector('[data-document-status]');
         button.disabled = true;
         try {
-          var file = JSON.parse(document.getElementById('medical-file-' + button.dataset.medicalDownload).textContent);
-          var bytes = Uint8Array.from(atob(file.data), function (c) { return c.charCodeAt(0); });
-          var digest = await crypto.subtle.digest('SHA-256', bytes);
-          var sha = Array.from(new Uint8Array(digest), function (b) { return b.toString(16).padStart(2, '0'); }).join('');
-          if (sha !== file.sha || !['application/pdf', 'image/jpeg', 'image/png'].includes(file.mime)) throw new Error('integrity');
-          var url = URL.createObjectURL(new Blob([bytes], { type: file.mime }));
-          var a = document.createElement('a'); a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
-          setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+          var file = await originalBytes(medicalRecord, button.dataset.medicalDownload);
+          saveBlob(new Blob([file.bytes], { type: file.mime }), file.name);
           status.textContent = ' Целостность проверена; оригинал передан браузеру для сохранения.';
         } catch (error) {
           status.textContent = ' Оригинал не удалось проверить или скачать. Повторите после обновления приложения.';
