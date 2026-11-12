@@ -337,6 +337,47 @@
     update();
   }
 
+  function setupMedicalTimeline(record) {
+    var panel = record.querySelector('.medical-timeline');
+    if (!panel) return;
+    var kind = 'all', expanded = false;
+    var items = Array.from(panel.querySelectorAll('.medical-timeline-item'));
+    var search = record.querySelector('[data-medical-search]');
+    var uncertain = panel.querySelector('[data-timeline-only-uncertain]');
+    var more = panel.querySelector('[data-timeline-more]');
+    var status = panel.querySelector('[data-timeline-count]');
+    function update() {
+      var query = search ? search.value.trim().toLocaleLowerCase() : '';
+      var found = 0, visible = 0;
+      panel.querySelectorAll('[data-timeline-group]').forEach(function (group) {
+        var inGroup = 0;
+        items.filter(function (item) { return group.contains(item); }).forEach(function (item) {
+          var matches = (kind === 'all' || item.dataset.timelineKind === kind) &&
+            (!uncertain.checked || item.dataset.timelineUncertain === 'true') &&
+            (!query || item.textContent.toLocaleLowerCase().includes(query));
+          if (matches) { found++; inGroup++; }
+          item.parentElement.hidden = !matches || (!expanded && inGroup > 12);
+          if (!item.parentElement.hidden) visible++;
+        });
+        group.hidden = !inGroup;
+      });
+      more.hidden = found <= visible;
+      status.textContent = found ? 'Показано записей: ' + visible + ' из ' + found + '. Сначала новые; даты без уточнения — отдельно.' : 'Нет записей для выбранного фильтра и поиска.';
+    }
+    panel.querySelectorAll('[data-timeline-filter]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        kind = button.dataset.timelineFilter; expanded = false;
+        panel.querySelectorAll('[data-timeline-filter]').forEach(function (b) { b.setAttribute('aria-pressed', String(b === button)); });
+        update();
+      });
+    });
+    uncertain.checked = false;
+    uncertain.addEventListener('change', function () { expanded = false; update(); });
+    if (search) search.addEventListener('input', function () { expanded = false; update(); });
+    more.addEventListener('click', function () { expanded = true; update(); });
+    update();
+  }
+
   function build() {
     var container = document.querySelector(".container");
     if (!container || container.dataset.screensReady) return;
@@ -367,6 +408,7 @@
     else screens.medcard.textContent = 'Медицинская карта ещё не поступила в эту версию отчёта. Обновите приложение.';
     if (medicalRecord) {
       setupMedicalPackage(medicalRecord);
+      setupMedicalTimeline(medicalRecord);
       var search = medicalRecord.querySelector('[data-medical-search]');
       if (search) search.addEventListener('input', function () {
         var query = search.value.trim().toLocaleLowerCase();

@@ -337,6 +337,18 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 .medical-package ul { padding-left:22px; }
 .medical-package-select { display:flex; align-items:center; gap:10px; min-height:44px; margin:8px 0; cursor:pointer; }
 .medical-package-select input { width:22px; height:22px; flex:0 0 22px; accent-color:var(--accent,#22d3ee); }
+
+.medical-timeline ol { list-style:none; margin:12px 0; padding:0 0 0 10px; border-left:2px solid var(--border,#ffffff20); }
+.medical-timeline .medical-timeline-item { margin:8px 0; padding:12px; }
+.medical-timeline-item summary strong,.medical-timeline-date,.medical-timeline-issue { display:block; }
+.medical-timeline-date { font-size:13px; color:var(--text-2,#b7b7cf); margin-bottom:5px; }
+.medical-timeline-meaning { display:block; font-size:13px; font-weight:400; margin-top:8px; border-left:3px solid var(--accent,#22d3ee); padding-left:10px; }
+.medical-timeline-issue { font-size:12px; color:var(--warning,#fbbf24); margin-top:5px; }
+.medical-timeline-filters { display:flex; flex-wrap:wrap; gap:8px; }
+.medical-timeline button { font:inherit; min-height:44px; max-width:100%; padding:9px 12px; border-radius:10px; border:1px solid var(--border,#ffffff30); background:var(--surface,#171726); color:var(--text,#eee); cursor:pointer; }
+.medical-timeline button[aria-pressed="true"] { border-color:var(--accent,#22d3ee); }
+.medical-timeline-only { display:flex; align-items:center; gap:10px; min-height:44px; margin:10px 0; }
+.medical-timeline-only input { width:22px; height:22px; flex:0 0 22px; accent-color:var(--accent,#22d3ee); }
 .tile .data-freshness { margin-top:5px; }
 .data-freshness[data-state="stale"],.data-freshness[data-state="missing"] { color:var(--warn); }
 .data-freshness[data-state="unknown"] { color:var(--text-2); }
