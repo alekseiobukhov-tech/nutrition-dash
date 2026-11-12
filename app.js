@@ -256,11 +256,27 @@
       if (search) search.addEventListener('input', function () {
         var query = search.value.trim().toLocaleLowerCase();
         var visible = 0;
-        medicalRecord.querySelectorAll('.medical-draw,.medical-note,.medical-visit,.medical-current,.medical-treatment').forEach(function (block) {
+        medicalRecord.querySelectorAll('.medical-topic,.medical-draw,.medical-note,.medical-visit,.medical-current,.medical-treatment').forEach(function (block) {
           block.hidden = !!query && !block.textContent.toLocaleLowerCase().includes(query);
           if (!block.hidden) visible++;
         });
         medicalRecord.querySelector('[data-medical-found]').textContent = query ? 'Найдено блоков истории: ' + visible : '';
+      });
+      medicalRecord.addEventListener('click', function (event) {
+        var link = event.target.closest('[data-medical-source]');
+        if (!link) return;
+        event.preventDefault();
+        var target = document.getElementById(link.getAttribute('href').slice(1));
+        if (!target || !medicalRecord.contains(target)) {
+          medicalRecord.querySelector('[data-medical-found]').textContent = 'Исходная запись сейчас недоступна. Сохранённый источник есть в истории карточки.';
+          return;
+        }
+        if (search) { search.value = ''; search.dispatchEvent(new Event('input')); }
+        for (var parent = target; parent && parent !== medicalRecord; parent = parent.parentElement) {
+          parent.hidden = false;
+          if (parent.tagName === 'DETAILS') parent.open = true;
+        }
+        target.scrollIntoView({ block: 'center', behavior: 'smooth' });
       });
     }
 
