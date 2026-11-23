@@ -1,20 +1,6 @@
 /* Health Dashboard — app-shell styles (tab navigation + design tokens). */
 
 :root {
-  --bg: #0e0e12;
-  --surface: #16161f;
-  --surface-2: #1c1c28;
-  --line: #ffffff14;
-  --line-soft: #ffffff0d;
-  --text: #ececf2;
-  --text-2: #9a9ac2;
-  --text-3: #6a6a8c;
-  --accent: #22d3ee;
-  --accent-dim: #0891b2;
-  --good: #34d399;
-  --warn: #facc15;
-  --bad: #fb7185;
-  --info: #60a5fa;
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
 }
 
@@ -116,57 +102,81 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 .tile.c-info .sub { color: var(--info); }
 .tile.c-muted .sub { color: var(--text-3); }
 
-/* ============================================================
-   THEME — dark is the default; light activates on <html data-theme="light">.
-   The pre-paint script in feedback_2026.html resolves system vs stored choice
-   and always stamps an explicit data-theme, so no @media duplication is needed.
-   Dark values below are the exact legacy hexes → the dark look is unchanged.
-   ============================================================ */
-:root{
-  --bg:#0f0f13;
-  --bg-hero-1:#0f0f13; --bg-hero-2:#1a1a2e; --bg-hero-3:#16213e;
-  --surface:#16161f;
-  --surface-2:#1a1a2e;
-  --text:#ececf2;
-  --text-hi:#ffffff;
-  --text-2:#aaaacc;
-  --text-3:#8a8ac4;   /* было #6666aa — 3.46:1 на карточке, ниже AA */
-  --line:#ffffff10;
-  --line-2:#ffffff14;
-  --line-soft:#ffffff0d;
-  --line-hair:#ffffff08;
-  --tabbar-bg:rgba(14,14,18,0.72);
-  --toggle-edge:#ffffff2b;
-  /* семантика: в тёмной теме легаси-значения проходят AA (4.69–8.37).
-     --warn — ярко-жёлтый yellow-400 (выбор владельца 23.07: «жёлтый жёлтым, ближе к золоту»),
-     заменил оранжевый amber #f59e0b; на #0f0f13 даёт ~11:1. Инлайн-литерал светофора
-     генераторы всё ещё печатают #f59e0b — его правит блок «тёмная тема» ниже по значению. */
-  --good:#22c55e; --warn:#facc15; --bad:#e94560; --info:#3b82f6;
-  --accent:#22d3ee; --violet:#a78bfa;
+/* Shared appearance for every report screen. */
+:root {
+  color-scheme:dark;
+  --bg:#10191b; --surface:#192426; --surface-2:#243032;
+  --text:#e9f1ef; --text-hi:#f5faf8; --text-2:#bdccc9; --text-3:#9baea9;
+  --line:#38494a; --line-2:#485b5b; --line-soft:#304042; --line-hair:#2b393b;
+  --accent:#99dfd2; --accent-dim:#64b8a9; --accent-surface:#203b38;
+  --chart-energy:#98baff; --chart-protein:#75d8bf; --chart-track:#354648;
+  --plot-good:#42c785; --plot-warn:#facc15; --plot-bad:#f3677a;
+  --good:#22c55e; --warn:#facc15; --bad:#ff8493; --info:#8bbafa; --violet:#bcacf4;
+  --bg-hero-1:var(--surface); --bg-hero-2:var(--surface); --bg-hero-3:var(--surface);
+  --border:var(--line); --warning:var(--warn);
+  --tabbar-bg:#192426f5; --toggle-edge:var(--line-2);
 }
-:root[data-theme="light"]{
-  --bg:#eef1f6;
-  --bg-hero-1:#e9eef7; --bg-hero-2:#dbe6f5; --bg-hero-3:#cfe0f1;
-  --surface:#ffffff;
-  --surface-2:#eef1f7;
-  --text:#242a36;
-  --text-hi:#0c1018;
-  --text-2:#4b5265;
-  --text-3:#5f6678;   /* было #6b7387 — 4.19:1 на фоне страницы */
-  --line:#00000012;
-  --line-2:#0000001c;
-  --line-soft:#0000000d;
-  --line-hair:#00000010;
-  --tabbar-bg:rgba(248,250,253,0.78);
-  /* проверено на обоих светлых фонах (#fff и #eef1f6), оба ≥4.5:1 */
-  /* --warn: жёлтое золото (тон 51°), а не оранжево-коричневый #8a5a00 (39°) — выбор владельца
-     23.07 «хочу жёлтые в светлой». Ярче на белом мелкий текст не читается (потолок ~4.5:1);
-     #7d6a00 = 5.34/4.72. Свет и тьма теперь один семантический смысл, но разные значения:
-     тьма #facc15 (яркий жёлтый на чёрном), свет #7d6a00 (золото на белом). */
-  --good:#137a3a; --bad:#be123c; --warn:#7d6a00; --info:#1d4ed8;
-  --accent:#155e75; --accent-dim:#0e7490; --violet:#6d28d9;
-  --toggle-edge:#00000024;
+:root[data-theme="light"] {
+  color-scheme:light;
+  --bg:#f2f6f4; --surface:#ffffff; --surface-2:#e8efec;
+  --text:#263c38; --text-hi:#182d2a; --text-2:#435c56; --text-3:#536b65;
+  --line:#d4dfda; --line-2:#becfc7; --line-soft:#dfe8e3; --line-hair:#e4ece7;
+  --accent:#155e57; --accent-dim:#28766d; --accent-surface:#e2f0eb;
+  --chart-energy:#345fb4; --chart-protein:#176e60; --chart-track:#d8e3df;
+  --plot-good:#1b844d; --plot-warn:#987304; --plot-bad:#c63d55;
+  --good:#137a3a; --warn:#7d6a00; --bad:#be123c; --info:#2855a3; --violet:#6d28d9;
+  --tabbar-bg:#fffffff5;
 }
+
+:root body { background:var(--bg); color:var(--text); }
+.screen .sec-title,.screen .card .big { color:var(--text-hi); }
+.screen .sec-sub,.screen .card h3 { color:var(--text-3); }
+.screen .card .small,.screen .data-table td { color:var(--text-2); }
+.screen .data-table th { color:var(--text-3); background:var(--surface-2); }
+.screen .sec-num { background:var(--accent-surface)!important; color:var(--accent); }
+.screen .card,.screen .score-card,.screen .table-wrap,.screen .rec-item,.screen .prio-item {
+  background-color:var(--surface); border-color:var(--line);
+}
+.screen a:not([class]),.tab.active { color:var(--accent); }
+.tab.active .tab-i { filter:none; }
+.screen .tag-green,.screen .tag-red,.screen .tag-blue {
+  background-color:var(--surface); border-color:currentColor;
+}
+.screen .tag-green {color:var(--good)}
+.screen .tag-red {color:var(--bad)}
+.screen .tag-blue {color:var(--info)}
+
+:root[data-theme="dark"] [style*="color:#e94560"] {color:var(--bad)!important}
+:root[data-theme="dark"] [style*="color:#3b82f6"],
+:root[data-theme="dark"] [style*="color:#60a5fa"] {color:var(--info)!important}
+:root[data-theme="dark"] [style*="color:#22d3ee"],
+:root[data-theme="dark"] [style*="color:#06b6d4"],
+:root[data-theme="dark"] [style*="color:#0891b2"] {color:var(--accent)!important}
+:root[data-theme="dark"] [style*="color:#8888bb"],
+:root[data-theme="dark"] [style*="color:#8888aa"] {color:var(--text-3)!important}
+:root[data-theme="dark"] [style*="color:#aaaacc"],
+:root[data-theme="dark"] [style*="color:#ccccdd"] {color:var(--text-2)!important}
+.screen .card [style*="color:#7c3aed"] {color:var(--violet)!important}
+.screen [style*="background:#1a1a2e"] {background-color:var(--surface-2)!important}
+.screen svg text[fill="#8888bb"],.screen svg text[fill="#6666aa"] {fill:var(--text-3)}
+
+.screen svg text[fill="#22c55e"] {fill:var(--good)}
+.screen svg line[stroke="#22c55e"] {stroke:var(--good)}
+.screen svg[aria-label^="Записанные калории"] rect[fill="#22c55e"] {fill:var(--plot-good)}
+.screen svg[aria-label^="Записанные калории"] rect[fill="#f59e0b"] {fill:var(--plot-warn)}
+.screen svg[aria-label^="Записанные калории"] rect[fill="#e94560"] {fill:var(--plot-bad)}
+
+/* Earlier report pages can still be present while the data service is rebuilding. */
+svg[aria-label^="Калории сегодня"] { --ring-ink:var(--chart-energy); }
+svg[aria-label^="Белок сегодня"] { --ring-ink:var(--chart-protein); }
+:root .screen svg:is([aria-label^="Калории сегодня"],[aria-label^="Белок сегодня"]) circle {
+  stroke:var(--chart-track);
+}
+:root .screen svg:is([aria-label^="Калории сегодня"],[aria-label^="Белок сегодня"]) circle[stroke-dasharray] {
+  stroke:var(--ring-ink);
+}
+:root .screen svg:is([aria-label^="Калории сегодня"],[aria-label^="Белок сегодня"]) text { fill:var(--text-hi); }
+:root .screen svg:is([aria-label^="Калории сегодня"],[aria-label^="Белок сегодня"]) text+text { fill:var(--text-2); }
 
 /* Видно только скринридеру: подписи таблиц. Не display:none и не visibility:hidden —
    те убирают элемент и из озвучки тоже. */
@@ -357,15 +367,10 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 /* Medical record overview and search share the same dated list. */
 .medical-record {
   --record-ink:var(--text); --record-muted:var(--text-2);
-  --record-accent:#99dfd2; --record-fill:#1c3032; --record-line:#34474a;
+  --record-accent:var(--accent); --record-fill:var(--accent-surface); --record-line:var(--line);
 }
-body:has(.tab[data-screen="medcard"][aria-current="page"]) { background:var(--bg); color:var(--text); }
 .medical-record:has([data-record-home]) { color:var(--record-ink); }
-.medical-record:has([data-record-home]) h2.sec-title { color:var(--record-ink); font-size:clamp(24px,5vw,30px); margin:0; }
-[data-theme="light"] .medical-record {
-  --record-ink:#1d3437; --record-muted:#4f6668;
-  --record-accent:#155e57; --record-fill:#edf5f2; --record-line:#d3e1dd;
-}
+.medical-record:has([data-record-home]) h2.sec-title { color:var(--text-hi); font-size:clamp(24px,5vw,30px); margin:0; }
 .medical-record [data-record-home] { max-width:44rem; }
 .medical-record .record-search { display:block; margin:12px 0 16px; }
 .medical-record .record-search>span { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }

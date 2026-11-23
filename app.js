@@ -797,7 +797,7 @@
 (function () {
   "use strict";
   var root = document.documentElement;
-  var META = { dark: "#0891b2", light: "#e9eef7" };
+  var META = { dark: "#192426", light: "#ffffff" };
   function current() { return root.getAttribute("data-theme") === "light" ? "light" : "dark"; }
 
   function stored() { try { return localStorage.getItem("theme"); } catch (e) { return null; } }
