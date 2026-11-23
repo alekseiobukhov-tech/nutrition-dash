@@ -342,7 +342,7 @@
     if (!panel) return;
     var kind = 'all', expanded = false;
     var items = Array.from(panel.querySelectorAll('.medical-timeline-item'));
-    var search = record.querySelector('[data-medical-search]');
+    var search = record.querySelector('[data-record-home]') ? null : record.querySelector('[data-medical-search]');
     var uncertain = panel.querySelector('[data-timeline-only-uncertain]');
     var more = panel.querySelector('[data-timeline-more]');
     var status = panel.querySelector('[data-timeline-count]');
@@ -379,6 +379,149 @@
     update();
   }
 
+  function setupRecordOverview(record) {
+    var home = record.querySelector('[data-record-home]');
+    if (!home) return false; // Existing reports retain their original text filter.
+    var index = JSON.parse(record.querySelector('[data-record-index]').textContent);
+    var search = home.querySelector('[data-medical-search]');
+    var overview = home.querySelector('[data-record-overview]');
+    var results = home.querySelector('[data-record-results]');
+    var list = results.querySelector('[data-record-list]');
+    var status = record.querySelector('[data-medical-found]');
+    var back = record.querySelector('[data-record-back]');
+    var about = record.querySelector('[data-record-about]');
+    var panels = Array.from(record.querySelectorAll('[data-record-panel]'));
+    var pages = [{target: null}], depth = 0;
+    var dates = new Intl.DateTimeFormat('ru-RU', {day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC'});
+    function displayDate(value) {
+      return /^\d{4}-\d{2}-\d{2}$/.test(value) ? dates.format(new Date(value+'T00:00:00Z')).replace(/ г\.$/, '') : value;
+    }
+    overview.querySelectorAll('time').forEach(function (time) { time.textContent = displayDate(time.dateTime); });
+    // Refreshing the document creates new DOM targets. Only restore entries from this instance.
+    var instance = String(Date.now()) + '-' + Math.random();
+    function normalize(text) { return text.toLocaleLowerCase('ru').replace(/ё/g, 'е').trim(); }
+    function renderList(container, entries) {
+      container.replaceChildren();
+      var unknown = false;
+      entries.forEach(function (entry) {
+        if (!entry.date && !unknown) {
+          var heading = document.createElement('h4');
+          heading.textContent = 'Без календарной даты'; container.appendChild(heading); unknown = true;
+        }
+        var link = document.createElement('a'), date = document.createElement('span');
+        var group = document.createElement('span'), title = document.createElement('strong');
+        var source = document.createElement('small');
+        link.className = 'record-row'; link.href = '#' + entry.target; link.dataset.medicalSource = '';
+        date.className = 'record-date'; date.textContent = displayDate(entry.date) || 'Без даты';
+        title.textContent = entry.title; source.textContent = entry.source + ' · ' + entry.meaning;
+        group.append(title, source); link.append(date, group); container.appendChild(link);
+      });
+    }
+    function updateSearch() {
+      var query = normalize(search.value);
+      results.hidden = !query; overview.hidden = !!query;
+      if (!query) { list.replaceChildren(); status.textContent = ''; return; }
+      prepareIndex();
+      var words = query.split(/\s+/);
+      var matches = index.filter(function (entry) {
+        return words.every(function (word) { return entry.searchable.includes(word); });
+      });
+      renderList(list, matches);
+      var count = matches.length;
+      status.textContent = count ? 'Найдено записей: ' + count : 'Совпадений нет. Попробуйте другое слово.';
+    }
+    var indexReady = false;
+    function prepareIndex() {
+      if (indexReady) return;
+      var sources = new Map();
+      index.forEach(function (entry) {
+        var node = entry.textTarget && document.getElementById(entry.textTarget);
+        if (node && record.contains(node) && !sources.has(node.id)) {
+          // Read nested versions and visit notes without traversing the embedded PDF payloads.
+          var walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+            acceptNode: function (part) {
+              if (part.nodeType === Node.TEXT_NODE) return NodeFilter.FILTER_ACCEPT;
+              return part.matches('script,style') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP;
+            }
+          });
+          var words = [], part;
+          while ((part = walker.nextNode())) words.push(part.textContent);
+          sources.set(node.id, words.join(' '));
+        }
+        entry.searchable = normalize([entry.title, entry.date, entry.source, entry.meaning, entry.terms,
+                                      sources.get(entry.textTarget)].join(' '));
+      });
+      indexReady = true;
+    }
+    function focusNode(node) {
+      if (!node) return;
+      if (!node.matches('a[href],button,input,summary,[tabindex]')) node.tabIndex = -1;
+      node.focus({preventScroll: true});
+    }
+    function renderPage(restore) {
+      var page = pages[depth], target = page.target, panel = target && target.closest('[data-record-panel]');
+      home.hidden = !!target; about.hidden = !!target; back.hidden = !target;
+      panels.forEach(function (item) { item.hidden = item !== panel; });
+      status.textContent = !target && search.value.trim() ? (list.querySelector('a') ?
+        'Найдено записей: ' + list.querySelectorAll('a').length : 'Совпадений нет. Попробуйте другое слово.') : '';
+      if (target) {
+        if (target.id === 'record-section-all') {
+          var allList = target.querySelector('[data-record-all-list]');
+          if (!allList.hasChildNodes()) {
+            renderList(allList, index.filter(function (item) { return !item.target.startsWith('medical-lab-'); }));
+            if (!allList.hasChildNodes()) allList.textContent = 'Доступных записей пока нет.';
+          }
+        }
+        for (var parent = target; parent && parent !== record; parent = parent.parentElement) {
+          parent.hidden = false;
+          if (parent.tagName === 'DETAILS') parent.open = true;
+        }
+        if (target.id === 'record-section-history') {
+          var timeline = target.querySelector('.medical-timeline-panel');
+          if (timeline) timeline.open = true;
+        }
+      }
+      if (restore && page.focus && page.focus.isConnected) {
+        focusNode(page.focus); window.scrollTo(0, page.scroll);
+      } else if (target) {
+        var focus = target.tagName === 'DETAILS' ? target.querySelector('summary') : target;
+        focusNode(focus); focus.scrollIntoView({block: 'start'});
+      }
+    }
+    function remember() {
+      pages[depth].scroll = window.scrollY; pages[depth].focus = document.activeElement;
+    }
+    record.addEventListener('click', function (event) {
+      var link = event.target.closest('[data-medical-source]');
+      if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      var target = document.getElementById(link.hash.slice(1));
+      event.preventDefault();
+      if (!target || !record.contains(target)) {
+        status.textContent = 'Источник недоступен в этой версии карты.'; return;
+      }
+      remember(); pages[depth].focus = link; depth++;
+      pages.splice(depth); pages.push({target: target});
+      try { history.pushState({recordView: instance, depth: depth}, '', '#medcard'); } catch (error) {}
+      renderPage(false);
+    });
+    back.addEventListener('click', function () {
+      if (!depth) return;
+      if (history.state && history.state.recordView === instance) { history.back(); return; }
+      remember(); depth--; renderPage(true);
+    });
+    window.addEventListener('popstate', function (event) {
+      if (location.hash !== '#medcard') return;
+      var next = event.state && event.state.recordView === instance ? event.state.depth : 0;
+      if (next !== depth && pages[next]) { remember(); depth = next; renderPage(true); }
+    });
+    search.addEventListener('input', updateSearch);
+    results.querySelector('[data-record-clear]').addEventListener('click', function () {
+      search.value = ''; updateSearch(); search.focus();
+    });
+    updateSearch(); renderPage(false);
+    return true;
+  }
+
   function build() {
     var container = document.querySelector(".container");
     if (!container || container.dataset.screensReady) return;
@@ -410,8 +553,9 @@
     if (medicalRecord) {
       setupMedicalPackage(medicalRecord);
       setupMedicalTimeline(medicalRecord);
+      var hasOverview = setupRecordOverview(medicalRecord);
       var search = medicalRecord.querySelector('[data-medical-search]');
-      if (search) search.addEventListener('input', function () {
+      if (!hasOverview && search) search.addEventListener('input', function () {
         var query = search.value.trim().toLocaleLowerCase();
         var visible = 0;
         medicalRecord.querySelectorAll('.medical-topic,.medical-document,.medical-draw,.medical-note,.medical-visit,.medical-current,.medical-treatment').forEach(function (block) {
@@ -422,7 +566,7 @@
         });
         medicalRecord.querySelector('[data-medical-found]').textContent = query ? 'Найдено блоков истории: ' + visible : '';
       });
-      medicalRecord.addEventListener('click', function (event) {
+      if (!hasOverview) medicalRecord.addEventListener('click', function (event) {
         var link = event.target.closest('[data-medical-source]');
         if (!link) return;
         event.preventDefault();

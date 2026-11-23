@@ -1,6 +1,6 @@
 // Health Dashboard PWA service worker.
 // Network-first for the report (always fresh when online), cache fallback offline.
-const CACHE = 'health-1a83eba8889238a5';
+const CACHE = 'health-c4120ba853165747';
 const SHELL = [
   'feedback_2026.html',
   'app.js',
@@ -12,28 +12,58 @@ const SHELL = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  // addAll commits the complete shell together. A failed update leaves the old worker active.
+  e.waitUntil(caches.open(CACHE).then((c) =>
+    c.addAll(SHELL.map(path => new Request(new URL(path, self.registration.scope), {cache: 'reload'})))
+  ).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) =>
+        k !== CACHE && /^health-(?:v\d+|[0-9a-f]{16})$/.test(k)
+      ).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', (e) => {
-  if (e.request.method !== 'GET') return;
-  e.respondWith(
-    fetch(e.request)
-      .then((r) => {
-        const copy = r.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy));
-        return r;
-      })
-      .catch(() => caches.match(e.request).then((m) => m || caches.match('feedback_2026.html')))
-  );
+const REPORTS = ['feedback_2026.html', 'health_analytics_2026.html', 'index.html'];
+
+async function serve(request, key) {
+  let response;
+  try {
+    response = await fetch(request);
+  } catch {
+    // The exact cached resource can still satisfy an offline request.
+  }
+  if (response && response.ok && response.status === 200 && !response.redirected) {
+    try {
+      const cache = await caches.open(CACHE);
+      await cache.put(key, response.clone());
+    } catch {
+      // A full or unavailable cache must still allow opening the online report.
+    }
+    return response;
+  }
+  if (response && response.status < 500) return response;
+  try {
+    const cached = await caches.match(key, {cacheName: CACHE});
+    if (cached) return cached;
+  } catch {
+    // The network response, when available, still carries the original failure.
+  }
+  return response || Response.error();
+}
+
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+  const base = self.registration.scope;
+  const report = REPORTS.find(path => url.origin + url.pathname === new URL(path, base).href);
+  const asset = SHELL.find(path => url.href === new URL(path, base).href);
+  if (report || asset) event.respondWith(serve(request, new URL(report || asset, base).href));
 });
 
-SHELL.push("app.css?v=f0124d211f9b", "app.js?v=8df208e7b406");
+SHELL.push("app.css?v=1ccd453ad4c5", "app.js?v=8417310bb19d");
