@@ -18,8 +18,10 @@
     { id: "medcard", icon: "🗂", label: "Медкарта" }
   ];
 
-  // A boundary comment → the screen everything after it belongs to (until the next boundary).
+  // Older reports group sections by their boundary comments. New sections name their screen.
   function screenFor(c) {
+    if (c.trim() === "WEEKLY PROGRESS") return "vosst";
+    if (c.trim() === "NUTRITION") return "pitanie";
     if (c.indexOf("CHARTS_HEALTH:START") >= 0)    return "vosst";      // full charts live on detail tabs;
     if (c.indexOf("CHARTS_NUTRITION:START") >= 0)  return "pitanie";   // Overview shows bento tiles built from them
     if (c.indexOf("CHARTS_LABS:START") >= 0)       return "analizy";
@@ -542,8 +544,10 @@
         var sc = screenFor(n.nodeValue);
         if (sc) current = sc;
         screens[current].appendChild(n);            // keep markers in the DOM
-      } else if (n.nodeType === 1) {                // element → current screen
-        screens[current].appendChild(n);
+      } else if (n.nodeType === 1) {
+        var owner = n.getAttribute("data-report-screen");
+        var target = Object.prototype.hasOwnProperty.call(screens, owner) ? owner : current;
+        screens[target].appendChild(n);
       }
     });
     SCREENS.forEach(function (s) { container.appendChild(screens[s.id]); });
@@ -812,6 +816,11 @@
     if (btn) btn.textContent = t === "light" ? "☀️" : "🌙";
   }
   function mount() {
+    var preference = stored();
+    if (preference !== "light" && preference !== "dark") {
+      preference = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    }
+    apply(preference);
     if (document.querySelector(".theme-toggle")) return;
     btn = document.createElement("button");
     btn.className = "theme-toggle";

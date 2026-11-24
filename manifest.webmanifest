@@ -66,14 +66,5 @@
         }
       ]
     }
-  ],
-  "screenshots": [
-    {
-      "src": "screenshots/overview-dark.png",
-      "sizes": "780x1688",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Обзор — плитки состояния и оценки разделов"
-    }
   ]
 }
