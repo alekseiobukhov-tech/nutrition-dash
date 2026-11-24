@@ -110,7 +110,7 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
   --text:#f1f6fa; --text-hi:#ffffff; --text-2:#ddebf0; --text-3:#becfd9;
   --line:#4e697a; --line-2:#718a99; --line-soft:#496171; --line-hair:#425c70;
   --accent:#a4dcff; --accent-dim:#86c9f3; --accent-surface:#36566d;
-  --chart-energy:#91ceff; --chart-protein:#7ae3bd; --chart-track:#506777;
+  --chart-energy:#91ceff; --chart-protein:#7ae3bd; --chart-track:#4a606f;
   --plot-good:#74dfa9; --plot-warn:#ffce68; --plot-bad:#ff95a0;
   --good:#88e8b7; --warn:#ffda88; --bad:#ffb1b7; --info:#a4dcff; --violet:#d1befc;
   --bg-hero-1:var(--surface); --bg-hero-2:var(--surface); --bg-hero-3:var(--surface);
@@ -165,15 +165,12 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 .screen svg[aria-label^="Записанные калории"] rect[fill="#f59e0b"] {fill:var(--plot-warn)}
 .screen svg[aria-label^="Записанные калории"] rect[fill="#e94560"] {fill:var(--plot-bad)}
 
-/* Earlier report pages can still be present while the data service is rebuilding. */
-svg[aria-label^="Калории сегодня"] { --ring-ink:var(--chart-energy); }
-svg[aria-label^="Белок сегодня"] { --ring-ink:var(--chart-protein); }
-:root .screen svg:is([aria-label^="Калории сегодня"],[aria-label^="Белок сегодня"]) circle {
-  stroke:var(--chart-track);
-}
-:root .screen svg:is([aria-label^="Калории сегодня"],[aria-label^="Белок сегодня"]) circle[stroke-dasharray] {
-  stroke:var(--ring-ink);
-}
+.daily-goals {display:flex;flex-wrap:wrap;justify-content:center;align-items:start;gap:8px;margin-bottom:8px}
+.daily-goal {text-align:center;font-size:.8125rem;color:var(--text-2)}
+.daily-goal svg {display:block;margin:auto}
+.daily-goal .goal-status {font-weight:650}
+.daily-goal.good .goal-status {color:var(--good)}
+.daily-goal.bad .goal-status {color:var(--bad)}
 :root .screen svg:is([aria-label^="Калории сегодня"],[aria-label^="Белок сегодня"]) text { fill:var(--text-hi); }
 :root .screen svg:is([aria-label^="Калории сегодня"],[aria-label^="Белок сегодня"]) text+text { fill:var(--text-2); }
 
