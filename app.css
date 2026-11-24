@@ -487,3 +487,70 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
   .tab {flex-direction:row; gap:3px; min-height:44px;}
   .tab-i {width:1rem;height:1rem;}
 }
+
+
+/* Range and daily detail share one date selection with the overview. */
+.energy-days[data-has-goal="1"] .energy-track::before {
+  content:""; position:absolute; inset-inline:0; bottom:var(--low); height:var(--band);
+  box-sizing:border-box; border-block:1px solid var(--good);
+  background:color-mix(in srgb,var(--good) 12%,transparent); pointer-events:none;
+}
+.energy-days[data-has-goal="0"] .energy-track::after {display:none}
+.energy-key .energy-band-key::before {content:"";display:inline-block;width:1em;height:.55em;
+  margin-right:.35em;border-block:1px solid var(--good);background:color-mix(in srgb,var(--good) 12%,transparent)}
+.energy-bar.muted {background:var(--text-3)}
+.energy-week legend {font-size:1.1rem}
+.energy-key,.energy-date,.energy-detail span,.energy-note,.energy-mean {font-size:.8125rem;line-height:1.45}
+.energy-mean {margin:.65rem 0 0;color:var(--text-2)}
+.energy-detail {font-size:1rem;line-height:1.5}
+.energy-comparison {display:block;color:var(--text-hi);font-weight:600}
+.energy-diary summary,.daily-nutrition-details summary,.compact-record summary {min-height:44px;cursor:pointer;align-content:center;color:var(--text-hi)}
+.energy-diary ul {padding:0;margin:0;list-style:none}
+.energy-diary li {display:flex;justify-content:space-between;flex-wrap:wrap;gap:.25rem .75rem;
+  padding:.4rem 0;border-top:1px solid var(--line);overflow-wrap:anywhere}
+.energy-diary li span,.energy-diary li strong {font-size:.9375rem}
+.daily-nutrition-details {margin:.75rem 0}
+.daily-nutrition-details summary {font-weight:650}
+.overview-day {margin:1rem 14px;padding:1rem 1.125rem;border:1px solid var(--line);border-radius:18px;background:var(--surface)}
+.overview-day h2,.overview-list-title {margin:0;font-size:1.125rem;color:var(--text-hi);line-height:1.3}
+.overview-list-title {margin:1.25rem 14px .35rem}
+.overview-date {display:flex;align-items:center;gap:.5rem;margin:.45rem 0;font-size:.9375rem;color:var(--text-2)}
+.overview-date time {text-align:center;font-variant-numeric:tabular-nums}
+.overview-day button {font:inherit;color:var(--text-hi);cursor:pointer;background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;min-height:44px}
+.overview-date button {min-width:44px;font-size:1.35rem}
+.overview-date button:disabled {opacity:.45;cursor:default}
+.overview-value {color:var(--text-hi);font-size:2rem;line-height:1.2;font-variant-numeric:tabular-nums}
+.overview-result p {margin:.25rem 0;font-size:1rem;overflow-wrap:anywhere}
+.overview-result .overview-state {color:var(--text-2);font-size:.875rem}
+.overview-open {padding:.4rem .8rem;margin-top:.65rem}
+.bento.overview-rows {display:block;padding:0 14px 1rem}
+.overview-rows .tile {width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.2rem .65rem;
+  border-radius:0;border:0;border-bottom:1px solid var(--line);padding:.7rem 1rem;background:var(--surface)}
+.overview-rows .eyebrow {font-size:1rem;letter-spacing:0;text-transform:none;padding:0;color:var(--text-hi)}
+.overview-rows .kpi {grid-column:2;grid-row:1;font-size:1.125rem;text-align:end}
+.overview-rows .kpi small {font-size:.8125rem;margin-left:.25em}
+.overview-rows .sub,.overview-rows .data-freshness {grid-column:1/-1;font-size:.8125rem;color:var(--text-2)}
+.overview-rows .chev {display:none}
+.screen .sec-title {font-size:1.375rem;line-height:1.25}
+.screen .data-freshness,.screen .score-date,.screen .sec-sub,.chart-hint {font-size:.8125rem;line-height:1.45}
+.weight-overview,.compact-records {display:none}
+@media (max-width:760px) {
+  .weight-overview {display:block;width:100%;height:auto;max-width:520px;margin-inline:auto}
+  .compact-records {display:block}
+  .has-compact-records {display:none}
+  .compact-record {border-bottom:1px solid var(--line);padding:.25rem 0;color:var(--text)}
+  .compact-record summary {font-size:.9375rem;line-height:1.4;overflow-wrap:anywhere}
+  .compact-record summary span {display:block;padding-inline-start:1em;margin:.18rem 0;color:var(--text-2);font-size:.875rem}
+  .compact-field {padding:.4rem 0 .4rem .8rem;font-size:.9375rem;overflow-wrap:anywhere}
+  .compact-field b {display:block;color:var(--text-2);font-size:.8125rem}
+}
+@media (max-width:420px) {
+  .energy-week {padding-inline:.4rem}
+  .energy-date {font-size:.75rem;white-space:normal;overflow-wrap:anywhere}
+}
+@media (forced-colors:active) {
+  .energy-days[data-has-goal="1"] .energy-track::before,.energy-key .energy-band-key::before {border-color:CanvasText}
+}
+
+.overview-header h1 {margin:0}
+.overview-header .appbar-when {font-size:.8125rem;line-height:1.35}

@@ -142,8 +142,141 @@
   }
   window.HealthFreshness = { describe: freshnessInfo, update: updateCardFreshness };
 
+  function element(tag, cls, label) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (label !== undefined) node.textContent = label;
+    return node;
+  }
+
+  function overviewDay(nutrition, openNutrition) {
+    var days = Array.from(nutrition.querySelectorAll('.energy-days input[data-day]'));
+    if (!days.length) return null;
+    var section = element('section', 'overview-day');
+    var title = element('h2', '', 'Калории за день');
+    var controls = element('div', 'overview-date');
+    var previous = element('button', '', '‹'), next = element('button', '', '›');
+    previous.type = next.type = 'button';
+    previous.setAttribute('aria-label', 'Предыдущий день дневника');
+    next.setAttribute('aria-label', 'Следующий день дневника');
+    var date = element('time'), value = element('strong', 'overview-value');
+    var comparison = element('p'), state = element('p', 'overview-state');
+    var range = nutrition.querySelector('.energy-band-key');
+    var result = element('div', 'overview-result');
+    result.setAttribute('aria-live', 'polite');
+    var link = element('button', 'overview-open', 'Открыть питание');
+    link.type = 'button';
+    link.addEventListener('click', openNutrition);
+    controls.append(previous, date, next);
+    result.append(value, comparison);
+    if (range) result.appendChild(element('p', 'overview-state', range.textContent));
+    result.appendChild(state);
+    section.append(title, controls, result, link);
+    function active() { return days.findIndex(function (day) { return day.checked; }); }
+    function refresh() {
+      var index = active();
+      if (index < 0) return;
+      var data = days[index].dataset;
+      date.dateTime = data.day;
+      date.textContent = new Date(data.day + 'T12:00:00').toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric'});
+      value.textContent = data.amount;
+      comparison.textContent = data.comparison;
+      state.textContent = data.completeness;
+      state.hidden = !data.completeness;
+      previous.disabled = index === 0;
+      next.disabled = index === days.length - 1;
+    }
+    function move(offset) {
+      var target = days[active() + offset];
+      if (target) { target.checked = true; target.dispatchEvent(new Event('change', {bubbles:true})); }
+    }
+    previous.addEventListener('click', function () { move(-1); });
+    next.addEventListener('click', function () { move(1); });
+    days.forEach(function (day) { day.addEventListener('change', refresh); });
+    refresh();
+    return section;
+  }
+
+  function prepareWeightChart(screen) {
+    var svg = screen.querySelector('.table-wrap > svg[aria-label^="График веса"]');
+    if (!svg || svg.closest('.weight-detail') || !svg.querySelector('polyline')) return;
+    var wrap = svg.parentNode, bounds = svg.viewBox.baseVal;
+    if (!bounds.width || !bounds.height) return;
+    var compact = svg.cloneNode(true), width = 320, scale = width / bounds.width;
+    compact.setAttribute('viewBox', '0 0 ' + width + ' ' + bounds.height);
+    compact.setAttribute('width', '100%');
+    compact.classList.add('weight-overview');
+    compact.querySelectorAll('[x],[x1],[cx]').forEach(function (node) {
+      ['x','x1','x2','cx','width'].forEach(function (key) {
+        if (node.hasAttribute(key)) node.setAttribute(key, Number(node.getAttribute(key)) * scale);
+      });
+    });
+    compact.querySelectorAll('polyline').forEach(function (line) {
+      Array.from(line.points).forEach(function (point) { point.x *= scale; });
+    });
+    var last = -Infinity;
+    compact.querySelectorAll('text[text-anchor="middle"]').forEach(function (label) {
+      var x = Number(label.getAttribute('x'));
+      if (x - last < 40) label.remove();
+      else { last = x; label.setAttribute('x', Math.max(14, Math.min(width - 14, x))); }
+    });
+    var full = element('details', 'weight-detail collapse');
+    full.appendChild(element('summary', '', 'Подробный график веса'));
+    wrap.before(compact, full);
+    full.appendChild(wrap);
+    var wide = window.matchMedia('(min-width:761px)');
+    function adjust() { full.open = wide.matches; }
+    adjust();
+    wide.addEventListener('change', adjust);
+    full.addEventListener('toggle', function () { if (full.open) prepareCharts(screen); });
+  }
+
+  function compactTables(labs, protocol) {
+    [labs, protocol].forEach(function (screen) {
+      screen.querySelectorAll('table.data-table').forEach(function (table) {
+        var header = table.tHead && table.tHead.rows[0];
+        if (!header || !table.tBodies[0]) return;
+        var columns = Array.from(header.cells);
+        var isLab = screen === labs && columns[0].textContent.includes('Показатель / единица');
+        if (!isLab && (screen !== protocol || columns[0].textContent.trim() !== 'Позиция')) return;
+        var list = element('div', 'compact-records');
+        Array.from(table.tBodies[0].rows).forEach(function (row) {
+          var cells = Array.from(row.cells);
+          if (cells.length !== columns.length) return;
+          var index = isLab ? cells.length - 1 : 1;
+          while (isLab && index > 0 && cells[index].textContent.trim() === '—') index--;
+          if (!index) return;
+          var item = element('details', 'compact-record'), summary = element('summary');
+          var marker = cells[0].querySelector('strong') || cells[0];
+          summary.appendChild(element('strong', '', marker.textContent.trim()));
+          var reading = isLab ? (cells[index].firstChild.textContent || '').trim() : cells[index].textContent.trim();
+          var unit = isLab && cells[0].querySelector('.small');
+          var stamp = isLab ? columns[index].firstChild.textContent.trim() : '';
+          summary.appendChild(element('span', '', [reading, unit && unit.textContent, stamp].filter(Boolean).join(' · ')));
+          item.appendChild(summary);
+          cells.slice(1).forEach(function (cell, i) {
+            if (cell.textContent.trim() === '—') return;
+            var line = element('div', 'compact-field');
+            line.appendChild(element('b', '', columns[i+1].innerText || columns[i+1].textContent));
+            var content = element('div');
+            Array.from(cell.childNodes).forEach(function (node) { content.appendChild(node.cloneNode(true)); });
+            line.appendChild(content);
+            item.appendChild(line);
+          });
+          list.appendChild(item);
+        });
+        if (list.childElementCount) {
+          table.parentNode.classList.add('has-compact-records');
+          table.parentNode.before(list);
+        }
+      });
+    });
+  }
+
   function prepareCharts(screen) {
+    prepareWeightChart(screen);
     screen.querySelectorAll('.table-wrap').forEach(function (wrap) {
+      if (!wrap.clientWidth) return;
       var svg = wrap.querySelector(':scope > svg');
       if (!svg || !svg.viewBox || svg.viewBox.baseVal.width < 600) return;
       wrap.classList.add('chart-scroll');
@@ -648,7 +781,10 @@
                        .filter(Boolean).sort(function (a, b) { return (a.order || 9) - (b.order || 9); });
       var grid = document.createElement("div");
       grid.className = "bento";
+      var daily = overviewDay(screens.pitanie, function () { show('pitanie'); });
+      if (daily) grid.classList.add('overview-rows');
       tiles.forEach(function (t) {
+        if (daily && t.tab === 'pitanie' && t.label === 'Калории') return;
         // Relative labels baked into HTML go stale in offline copies; the dated line is dynamic.
         var sub = t.sub || "";
         if (t.freshness && t.freshness.kind === "measurement") sub = sub.replace(/^замер (?:сегодня|вчера|\d+ дн\. назад)(?: · )?/, "");
@@ -657,17 +793,26 @@
         if (t.freshness && t.freshness.kind === "blood_draw") sub = sub.replace(/ · \d{2}\.\d{2}\.\d{4}$/, "");
         var tile = document.createElement("button");
         tile.className = "tile" + (t.span === 2 ? " wide" : "") + (t.color ? " c-" + t.color : "");
-        tile.innerHTML =
-          '<div class="eyebrow">' + (t.icon || "") + " " + t.label + "</div>" +
-          '<div class="kpi">' + t.value + (t.unit ? '<small>' + t.unit + "</small>" : "") + "</div>" +
-          (sub ? '<div class="sub">' + sub + "</div>" : "") +
-          '<span class="chev">›</span>';
+        tile.type = "button";
+        tile.appendChild(element("div", "eyebrow", t.label));
+        var number = element("div", "kpi", t.value);
+        if (t.unit) number.appendChild(element("small", "", t.unit));
+        tile.appendChild(number);
+        if (sub) tile.appendChild(element("div", "sub", sub));
+        var chevron = element("span", "chev", "›");
+        chevron.setAttribute("aria-hidden", "true");
+        tile.appendChild(chevron);
         attachFreshness(tile, t.freshness);
         // Old reports without metadata remain visibly unknown until their generator runs.
         tile.addEventListener("click", function () { show(t.tab); });
         grid.appendChild(tile);
       });
       screens.obzor.insertBefore(grid, screens.obzor.firstChild);
+
+      if (daily) grid.before(daily, element('h2', 'overview-list-title', 'Последние показатели'));
+      screens.obzor.querySelectorAll('.section > .small:only-child').forEach(function (note) {
+        if (note.textContent.trim() === 'Данных пока нет.') note.textContent = 'Для сводки наблюдений пока недостаточно данных.';
+      });
 
       // Ряд оценок физически лежит в .hero, то есть НАД плитками и вне вкладок. На телефоне это
       // давало 627px шапки при 757px экрана: операционные плитки — то, ради чего открывают утром —
@@ -713,11 +858,13 @@
     });
     updateCardFreshness();
 
+    compactTables(screens.analizy, screens.protokol);
+
     // progressive disclosure: collapse heavy tables inside detail screens
     ["pitanie", "vosst", "analizy", "protokol"].forEach(function (sid) {
       screens[sid].querySelectorAll(".table-wrap").forEach(function (tw) {
         var rows = tw.querySelectorAll("tr").length;
-        if (rows < 5 || tw.closest("details")) return;
+        if (rows < 5 || tw.closest("details") || tw.classList.contains("has-compact-records")) return;
         var det = document.createElement("details");
         det.className = "collapse";
         // Первая таблица экрана — текущий период, ради неё вкладку и открывают: прятать её за
@@ -743,6 +890,13 @@
     Array.from(hero.children).forEach(function (node) {
       if (!node.matches("#dash-lock,.theme-toggle")) overviewHeader.appendChild(node);
     });
+    var overviewTitle = overviewHeader.querySelector('h1.sr-only');
+    if (overviewTitle) {
+      overviewTitle.textContent = 'Обзор';
+      overviewTitle.classList.remove('sr-only');
+    }
+    var when = overviewHeader.querySelector('.appbar-when');
+    if (when && when.textContent.trim() === 'данные не загружены') when.textContent = 'Время обновления неизвестно';
     hero.prepend(overviewHeader);
     var heading = document.createElement("h1");
     heading.className = "report-heading";
@@ -836,7 +990,9 @@
      страницу при следующем открытии. Адресной строки нет, «потянуть для обновления» тоже, —
      значит о смене версии надо сказать словами и дать кнопку. */
   if ("serviceWorker" in navigator) {
+    var hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener("controllerchange", function () {
+      if (!hadController) { hadController = true; return; }
       var bar = document.getElementById("freshness") || document.createElement("div");
       bar.id = "freshness";
       bar.className = "freshness stale";
