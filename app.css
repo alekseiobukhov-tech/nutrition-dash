@@ -222,7 +222,7 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
   font-size:13px; font-weight:600; line-height:1.35; text-align:center;
 }
 .freshness.off {background:var(--surface-2);color:var(--text);border-bottom:1px solid var(--line)}
-.freshness.stale {background:var(--surface-2);color:var(--text);border-bottom:3px solid var(--warn)}
+.freshness.stale {background:var(--surface-2);color:var(--text);border-bottom:1px solid var(--line)}
 .freshness-btn{
   font:inherit; padding:4px 14px; border-radius:999px; cursor:pointer;
   background:var(--surface); color:var(--text); border:1px solid var(--line-2);
@@ -257,7 +257,6 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
   [style^="color:#fbbf24"], [style*=";color:#fbbf24"], [style*="; color:#fbbf24"]
 ) {
   color:var(--text)!important;
-  text-decoration:underline solid var(--warn) .2em; text-underline-offset:.14em;
 }
 :root[data-theme] [style*="color:#e94560"]{color:var(--bad)!important}
 :root[data-theme] [style*="color:#3b82f6"]{color:var(--info)!important}
@@ -478,12 +477,6 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
   .medical-record .record-labs a { display:inline-flex; align-items:center; min-height:44px; }
 }
 .tile .data-freshness { margin-top:5px; }
-.tile.c-warn .sub, .data-freshness:is([data-state="stale"],[data-state="missing"]),
-.medical-timeline-issue, .medical-question-badge,
-.medical-topic[data-source-state="changed"] .medical-topic-kind,
-.med-review-freshness:is([data-evidence-state="changed"],[data-evidence-state="unavailable"]) {
-  color:var(--text); border-inline-start:3px solid var(--warn); padding-inline-start:.5em;
-}
 .data-freshness[data-state="unknown"] { color:var(--text-2); }
 .source-dates { display:flex; flex-wrap:wrap; gap:6px 16px; margin:0 0 16px; padding:10px 12px; background:var(--surface-2); border:1px solid var(--line-hair); border-radius:10px; }
 .score-date { margin-top:6px; font-weight:400; }
