@@ -67,32 +67,54 @@
     return isNaN(d.getTime()) ? null : d;
   }
 
+  var wasOffline = navigator.onLine === false;
+  var reconnected = false;
+  var updateReady = false;
+
+  function reloadReport() {
+    if (location.hash === '#pitanie') {
+      var selected = document.querySelector('#screen-pitanie .energy-days input[data-day]:checked');
+      if (selected) {
+        try { history.replaceState(history.state, '', '#pitanie/' + selected.dataset.day); }
+        catch (error) { /* The undated route still works if history is unavailable. */ }
+      }
+    }
+    location.reload();
+  }
+
   function freshnessBar() {
-    var when = generatedAt();
-    var bar = document.getElementById("freshness");
+    var bar = document.getElementById('freshness');
     if (!bar) {
-      bar = document.createElement("div");
-      bar.id = "freshness";
-      bar.className = "freshness";
-      document.body.insertBefore(bar, document.body.firstChild);
+      bar = element('div', 'freshness');
+      bar.id = 'freshness';
+      var message = element('span', 'freshness-message');
+      message.setAttribute('role', 'status');
+      var button = element('button', 'freshness-btn', 'Обновить');
+      button.type = 'button';
+      button.addEventListener('click', reloadReport);
+      bar.append(message, button);
+      document.body.prepend(bar);
     }
     var offline = navigator.onLine === false;
-    var ageH = when ? (Date.now() - when.getTime()) / 3600000 : null;
-    var stale = ageH !== null && ageH > STALE_H;
-    if (!offline && !stale) { bar.style.display = "none"; return; }
+    if (offline) reconnected = false;
+    else if (wasOffline) reconnected = true;
+    wasOffline = offline;
 
-    var stamp = when
-      ? when.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit",
-                                       hour: "2-digit", minute: "2-digit" })
-      : "неизвестно когда";
-    bar.className = "freshness" + (offline ? " off" : " stale");
-    bar.innerHTML = (offline ? "📴 Офлайн · данные на " : "⏳ Данные не обновлялись · собраны ")
-      + stamp + (ageH !== null ? " (" + Math.round(ageH) + " ч назад)" : "")
-      + '<button class="freshness-btn" type="button">Обновить</button>';
-    bar.style.display = "";
-    bar.querySelector(".freshness-btn").addEventListener("click", function () {
-      location.reload();
+    var when = generatedAt();
+    var stale = when && Date.now() - when.getTime() > STALE_H * 3600000;
+    var stamp = when && when.toLocaleString('ru-RU', {
+      day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'
     });
+    var text = '';
+    if (offline) text = 'Без сети. ' + (stamp ? 'Отчёт от ' + stamp : 'Дата отчёта неизвестна.');
+    else if (updateReady) text = 'Доступна новая версия';
+    else if (reconnected) text = 'Сеть появилась';
+    else if (stale) text = 'Последний отчёт от ' + stamp;
+    bar.className = 'freshness ' + (offline ? 'off' : 'stale');
+    bar.hidden = !text;
+    bar.querySelector('button').hidden = offline;
+    var label = bar.querySelector('.freshness-message');
+    if (label.textContent !== text) label.textContent = text;
   }
 
   // Only wide timeline SVGs need scrolling. Laboratory gauges and calorie rings stay fitted.
@@ -1026,24 +1048,16 @@
     var hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener("controllerchange", function () {
       if (!hadController) { hadController = true; return; }
-      var bar = document.getElementById("freshness") || document.createElement("div");
-      bar.id = "freshness";
-      bar.className = "freshness stale";
-      bar.innerHTML = "🆕 Загружена новая версия приложения"
-        + '<button class="freshness-btn" type="button">Перезагрузить</button>';
-      if (!bar.parentNode) document.body.insertBefore(bar, document.body.firstChild);
-      bar.style.display = "";
-      bar.querySelector(".freshness-btn").addEventListener("click", function () {
-        location.reload();
-      });
+      updateReady = true;
+      freshnessBar();
     });
   }
 
   window.addEventListener("online", function () { freshnessBar(); updateCardFreshness(); });
   window.addEventListener("offline", function () { freshnessBar(); updateCardFreshness(); });
-  document.addEventListener("visibilitychange", function () { if (!document.hidden) updateCardFreshness(); });
-  // Re-evaluate cached cards across midnight without changing their measurement dates.
-  window.setInterval(updateCardFreshness, 60000);
+  function refreshDates() { freshnessBar(); updateCardFreshness(); }
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) refreshDates(); });
+  window.setInterval(refreshDates, 60000);
 
   function start() { build(); freshnessBar(); }
 
