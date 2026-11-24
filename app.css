@@ -106,26 +106,26 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 /* Keep legacy generated sections and native controls on the same semantic colours. */
 :root {
   color-scheme:dark;
-  --bg:#23384b; --surface:#2d4559; --surface-2:#334d60;
-  --text:#f1f6fa; --text-hi:#ffffff; --text-2:#ddebf0; --text-3:#becfd9;
-  --line:#4e697a; --line-2:#718a99; --line-soft:#496171; --line-hair:#425c70;
-  --accent:#a4dcff; --accent-dim:#86c9f3; --accent-surface:#36566d;
-  --chart-energy:#91ceff; --chart-protein:#7ae3bd; --chart-track:#4a606f;
-  --plot-good:#74dfa9; --plot-warn:#ffce68; --plot-bad:#ff95a0;
-  --good:#88e8b7; --warn:#ffda88; --bad:#ffb1b7; --info:#a4dcff; --violet:#d1befc;
+  --bg:#131b20; --surface:#1c272f; --surface-2:#24313a;
+  --text:#eef3f5; --text-hi:#ffffff; --text-2:#d2dfe5; --text-3:#acbdc6;
+  --line:#3c4e59; --line-2:#697f8b; --line-soft:#354650; --line-hair:#30414c;
+  --accent:#83c5ff; --accent-dim:#68addf; --accent-surface:#233e51;
+  --chart-energy:#79baf4; --chart-protein:#48c77c; --chart-track:#33414c;
+  --plot-good:#48c77c; --plot-warn:#e5b74d; --plot-bad:#ff5840;
+  --good:#57cd8f; --warn:#f3cf73; --bad:#ff7054; --info:#83c5ff; --violet:#b5b3e7;
   --bg-hero-1:var(--surface); --bg-hero-2:var(--surface); --bg-hero-3:var(--surface);
   --border:var(--line); --warning:var(--warn);
   --tabbar-bg:var(--surface); --toggle-edge:var(--line-2);
 }
 :root[data-theme="light"] {
   color-scheme:light;
-  --bg:#fff8eb; --surface:#ffffff; --surface-2:#edf6fb;
-  --text:#263d50; --text-hi:#17344b; --text-2:#405b70; --text-3:#536b7b;
-  --line:#d4e3e9; --line-2:#acc7d4; --line-soft:#e1ebef; --line-hair:#e4edf1;
-  --accent:#146598; --accent-dim:#267aa7; --accent-surface:#dff2fc;
-  --chart-energy:#307ab3; --chart-protein:#008164; --chart-track:#dfeaf0;
-  --plot-good:#299263; --plot-warn:#af7d0c; --plot-bad:#d34c61;
-  --good:#197449; --warn:#805a0a; --bad:#ae354c; --info:#146598; --violet:#7355a2;
+  --bg:#f4f7f8; --surface:#ffffff; --surface-2:#eef3f5;
+  --text:#26373f; --text-hi:#16262e; --text-2:#40535e; --text-3:#526671;
+  --line:#d8e1e5; --line-2:#afc1c9; --line-soft:#e1e9ec; --line-hair:#e5ecef;
+  --accent:#12659b; --accent-dim:#277ba7; --accent-surface:#e2f0f8;
+  --chart-energy:#2875ad; --chart-protein:#13834e; --chart-track:#e2e8eb;
+  --plot-good:#13834e; --plot-warn:#a4770a; --plot-bad:#cf3927;
+  --good:#087247; --warn:#795900; --bad:#b62919; --info:#12659b; --violet:#615893;
 }
 
 :root body { background:var(--bg); color:var(--text); }
@@ -143,6 +143,10 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 }
 .screen .tag-green {color:var(--good)}
 .screen .tag-red {color:var(--bad)}
+.screen .alert-red {background:var(--surface);border-color:var(--bad)}
+.screen :is(.prio-impact,.prio-num,.rec-tag)[style*="background:#e94560"] {
+  background:var(--surface-2)!important; border-color:var(--bad)!important;
+}
 .screen .tag-blue {color:var(--info)}
 
 :root[data-theme="dark"] [style*="color:#e94560"] {color:var(--bad)!important}
@@ -242,28 +246,28 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 /* ── светлая тема ─────────────────────────────────────────────────────────── */
 /* нейтрали */
 :root[data-theme="light"] [style*="color:#fff"]{color:var(--text-hi)!important}
-:root[data-theme="light"] [style*="color:#e6e6e6"]{color:var(--text)!important}      /* 1.25 → 12.7 */
+:root[data-theme="light"] [style*="color:#e6e6e6"]{color:var(--text)!important}
 :root[data-theme="light"] [style*="color:#ccccdd"]{color:var(--text-2)!important}
 :root[data-theme="light"] [style*="color:#aaaacc"]{color:var(--text-2)!important}
 :root[data-theme="light"] [style*="color:#6666aa"]{color:var(--text-3)!important}
 :root[data-theme="light"] [style*="color:#8888bb"]{color:var(--text-3)!important}
 :root[data-theme="light"] [style*="color:#8888aa"]{color:var(--text-3)!important}
 /* семантика — светофор, которым читаются таблицы */
-:root[data-theme="light"] [style*="color:#22c55e"]{color:var(--good)!important}      /* 2.28 → 5.42 */
-:root[data-theme="light"] [style*="color:#f59e0b"]{color:var(--warn)!important}      /* 2.15 → 5.93 */
-:root[data-theme="light"] [style*="color:#fbbf24"]{color:var(--warn)!important}      /* 1.67 → 5.93 */
-:root[data-theme="light"] [style*="color:#e94560"]{color:var(--bad)!important}       /* 3.83 → 6.29 */
-:root[data-theme="light"] [style*="color:#3b82f6"]{color:var(--info)!important}      /* 3.68 → 6.70 */
-:root[data-theme="light"] [style*="color:#60a5fa"]{color:var(--info)!important}      /* 2.54 → 6.70 */
-:root[data-theme="light"] [style*="color:#22d3ee"]{color:var(--accent)!important}    /* 1.81 → 7.27 */
+:root[data-theme="light"] [style*="color:#22c55e"]{color:var(--good)!important}
+:root[data-theme="light"] [style*="color:#f59e0b"]{color:var(--warn)!important}
+:root[data-theme="light"] [style*="color:#fbbf24"]{color:var(--warn)!important}
+:root[data-theme="light"] [style*="color:#e94560"]{color:var(--bad)!important}
+:root[data-theme="light"] [style*="color:#3b82f6"]{color:var(--info)!important}
+:root[data-theme="light"] [style*="color:#60a5fa"]{color:var(--info)!important}
+:root[data-theme="light"] [style*="color:#22d3ee"]{color:var(--accent)!important}
 :root[data-theme="light"] [style*="color:#06b6d4"]{color:var(--accent)!important}
 :root[data-theme="light"] [style*="color:#0891b2"]{color:var(--accent)!important}
-:root[data-theme="light"] [style*="color:#a78bfa"]{color:var(--violet)!important}    /* 2.72 → 7.10 */
+:root[data-theme="light"] [style*="color:#a78bfa"]{color:var(--violet)!important}
 
 /* ── тёмная тема ──────────────────────────────────────────────────────────── */
 /* Единственный провал тёмной темы — цвет подписей, а им набраны все честные оговорки
    («из первичного анализа», «месяц идёт, по 22.07»). */
-:root[data-theme="dark"] [style*="color:#6666aa"]{color:var(--text-3)!important}     /* 3.46 → 5.57 */
+:root[data-theme="dark"] [style*="color:#6666aa"]{color:var(--text-3)!important}
 :root[data-theme="dark"] [style*="color:#8888aa"]{color:var(--text-3)!important}
 :root[data-theme="dark"] [style*="color:#8888bb"]{color:var(--text-3)!important}
 
@@ -295,6 +299,8 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 .screen svg :is([fill="#22c55e"],[fill="#4ade80"]):not(text) {fill:var(--plot-good)}
 .screen svg :is([fill="#f59e0b"],[fill="#fbbf24"]):not(text) {fill:var(--plot-warn)}
 .screen svg :is([fill="#e94560"],[fill="#ef4444"]):not(text) {fill:var(--plot-bad)}
+.screen svg :is([stroke="#e94560"],[stroke="#ef4444"]) {stroke:var(--plot-bad)}
+.screen svg text:is([fill="#e94560"],[fill="#ef4444"]) {fill:var(--bad)}
 .screen svg :is([fill="#06b6d4"],[fill="#22d3ee"],[fill="#3b82f6"]) {fill:var(--chart-energy)}
 .screen svg :is([stroke="#06b6d4"],[stroke="#22d3ee"],[stroke="#3b82f6"]) {stroke:var(--chart-energy)}
 .screen svg [fill="#a78bfa"] {fill:var(--violet)}
