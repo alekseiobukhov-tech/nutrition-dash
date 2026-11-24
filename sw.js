@@ -1,6 +1,6 @@
 // Health Dashboard PWA service worker.
 // Network-first for the report (always fresh when online), cache fallback offline.
-const CACHE = 'health-467ae33eb5506721';
+const CACHE = 'health-704bcbef58c1befc';
 const SHELL = [
   'feedback_2026.html',
   'app.js',
@@ -30,10 +30,11 @@ self.addEventListener('activate', (e) => {
 
 const REPORTS = ['feedback_2026.html', 'health_analytics_2026.html', 'index.html'];
 
-async function serve(request, key) {
+async function serve(request, key, report) {
   let response;
   try {
-    response = await fetch(request);
+    // A receipt can reopen the same URL immediately after a new diary was published.
+    response = report ? await fetch(request, {cache: "reload"}) : await fetch(request);
   } catch {
     // The exact cached resource can still satisfy an offline request.
   }
@@ -63,7 +64,7 @@ self.addEventListener('fetch', (event) => {
   const base = self.registration.scope;
   const report = REPORTS.find(path => url.origin + url.pathname === new URL(path, base).href);
   const asset = SHELL.find(path => url.href === new URL(path, base).href);
-  if (report || asset) event.respondWith(serve(request, new URL(report || asset, base).href));
+  if (report || asset) event.respondWith(serve(request, new URL(report || asset, base).href, report));
 });
 
-SHELL.push("app.css?v=97dc5b4c1c98", "app.js?v=1d852cc6b394");
+SHELL.push("app.css?v=26d05582bbfd", "app.js?v=96a4e51d8eac");

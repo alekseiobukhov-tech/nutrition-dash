@@ -555,3 +555,7 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 
 .overview-header h1 {margin:0}
 .overview-header .appbar-when {font-size:.8125rem;line-height:1.35}
+
+.energy-add {display:inline-flex;align-items:center;box-sizing:border-box;min-height:44px;
+  margin-top:.4rem;padding:.35rem .75rem;border:1px solid var(--line-2);
+  border-radius:10px;background:var(--surface-2);color:var(--text-hi);text-decoration:none}

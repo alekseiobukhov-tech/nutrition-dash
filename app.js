@@ -45,6 +45,7 @@
   // это реальный экран, иначе null (мусор в хэше молча игнорируется).
   function fromHash() {
     var h = (location.hash || "").replace(/^#/, "");
+    if (/^pitanie\/[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(h)) return "pitanie";
     return SCREENS.some(function (s) { return s.id === h; }) ? h : null;
   }
 
@@ -971,7 +972,38 @@
     }
     function restoreRoute() {
       var id = fromHash();
-      if (id || !location.hash) display(id || "obzor", true);
+      if (id || !location.hash) { display(id || "obzor", true); selectLinkedDay(); }
+    }
+    var week = screens.pitanie.querySelector('.energy-week');
+    var dateNotice = element('p', 'energy-note');
+    dateNotice.hidden = true;
+    dateNotice.setAttribute('role', 'status');
+    if (week) {
+      week.before(dateNotice);
+      week.addEventListener('change', function (event) {
+        if (!event.target.matches('input[data-day]')) return;
+        dateNotice.hidden = true;
+        var address = '#pitanie/' + event.target.dataset.day;
+        if (location.hash.startsWith('#pitanie/') && location.hash !== address) {
+          history.replaceState(history.state, '', address);
+        }
+      });
+    }
+    function selectLinkedDay() {
+      dateNotice.hidden = true;
+      if (!week || fromHash() !== 'pitanie' || !location.hash.startsWith('#pitanie/')) return;
+      var day = location.hash.slice('#pitanie/'.length);
+      var radio = Array.from(week.querySelectorAll('input[data-day]')).find(function (item) {
+        return item.dataset.day === day;
+      });
+      if (radio) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change', {bubbles:true}));
+      } else {
+        dateNotice.textContent = 'Даты ' + day.split('-').reverse().join('.') +
+          ' нет в показанной неделе. Выберите доступный день на графике.';
+        dateNotice.hidden = false;
+      }
     }
     window.__showScreen = show;
     window.addEventListener("popstate", restoreRoute);
@@ -984,6 +1016,7 @@
       try { history.replaceState(history.state, "", "#obzor"); } catch (error) {}
     }
     display(fromHash() || "obzor", false);
+    selectLinkedDay();
   }
 
   /* Новая версия в standalone приходит молча: service worker делает skipWaiting и подменяет
