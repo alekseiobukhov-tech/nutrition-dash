@@ -335,6 +335,47 @@ svg[aria-label^="Белок сегодня"] { --ring-ink:var(--chart-protein); 
   .chart-scroll > svg { min-width: 720px; }
 }
 
+/* The seven date controls stay on one row. The checked radio exposes its own reading. */
+.energy-week {
+  margin:16px 0 0; min-inline-size:0; padding:8px 12px 12px;
+  border:1px solid var(--line); border-radius:14px; background:var(--surface); color:var(--text);
+}
+.energy-week legend { padding:0 5px; color:var(--text-hi); font-size:16px; font-weight:650; }
+.energy-key { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 10px;
+  margin-bottom:8px; color:var(--text-2); font-size:13px; }
+.energy-key span:last-child::before { content:""; display:inline-block; width:16px;
+  border-top:1px dashed currentColor; vertical-align:middle; margin-right:5px; }
+.energy-days { position:relative; display:grid; grid-template-columns:repeat(var(--days),minmax(0,1fr)); }
+.energy-days label { grid-row:1; display:flex; flex-direction:column; min-width:0;
+  align-items:stretch; text-align:center; cursor:pointer; color:var(--text-2); }
+.energy-track { position:relative; height:118px; display:flex; align-items:flex-end;
+  justify-content:center; border-bottom:1px solid var(--line-2); }
+.energy-track::after { content:""; position:absolute; inset-inline:0; bottom:var(--goal-level);
+  border-top:1px dashed var(--text-3); pointer-events:none; }
+.energy-bar { position:relative; z-index:1; width:57%; max-width:42px; height:var(--height);
+  min-height:2px; border-radius:4px 4px 0 0; }
+.energy-bar.good { background:var(--plot-good); }
+.energy-bar.warn { background:var(--plot-warn); }
+.energy-bar.bad { background:var(--plot-bad); }
+.energy-bar.empty { min-height:0; }
+.energy-mark { position:absolute; bottom:100%; inset-inline:0; color:var(--text);
+  font:600 14px/1.05 system-ui,sans-serif; }
+.energy-date { padding:6px 0 4px; border-bottom:3px solid transparent;
+  font:500 12px/1.4 system-ui,sans-serif; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.energy-days input:checked + label .energy-date { border-color:var(--accent);
+  color:var(--text-hi); font-weight:750; }
+.energy-days input:focus-visible + label { outline:2px solid var(--accent); outline-offset:-2px; border-radius:4px; }
+.energy-detail { display:none; grid-column:1/-1; grid-row:2; padding:10px 0 0; margin:0;
+  color:var(--text-2); font-size:15px; font-variant-numeric:tabular-nums; }
+.energy-days input:checked + label + .energy-detail { display:block; }
+.energy-detail strong { color:var(--text-hi); }
+.energy-detail span { display:block; font-size:13px; }
+.energy-note { margin:8px 0 0; font-size:12px; line-height:1.4; color:var(--text-3); }
+@media (forced-colors:active) {
+  .energy-bar:not(.empty) { border:1px solid CanvasText; }
+  .energy-days input:checked + label .energy-date { border-bottom-color:Highlight; }
+}
+
 /* Dates of displayed records, independent of the report's publication date. */
 .data-freshness,.score-date { font-size:11px; line-height:1.45; color:var(--text-2); overflow-wrap:anywhere; }
 
