@@ -6,16 +6,16 @@
   "use strict";
 
   var SCREENS = [
-    { id: "obzor",    icon: "🏠", label: "Обзор" },
-    { id: "pitanie",  icon: "🍽", label: "Питание" },
+    { id: "obzor",    icon: "M3 10.5 12 3l9 7.5 M5 9v11h5v-6h4v6h5V9", label: "Обзор" },
+    { id: "pitanie",  icon: "M5 3v6a3 3 0 0 0 6 0V3 M8 3v18 M18 3c-3 3-4 7-4 10h4 M18 3v18", label: "Питание" },
     // «Восстановление» named one fifth of what is here (sleep) and was already truncated to
     // «Восст.» in the bar. The tab is weight-to-goal, sleep, training and their weekly and
     // monthly series — all of it change over time. The id stays `vosst` on purpose: it is
     // internal (screen-vosst) and renaming it buys nothing but churn.
-    { id: "vosst",    icon: "📈", label: "Динамика" },
-    { id: "analizy",  icon: "🔬", label: "Анализы" },
-    { id: "protokol", icon: "💊", label: "Протокол" },
-    { id: "medcard", icon: "🗂", label: "Медкарта" }
+    { id: "vosst",    icon: "M3 4v16h18 M6 15l4-5 4 2 6-7", label: "Динамика" },
+    { id: "analizy",  icon: "m10 4 2-2 5 5-2 2z M12 7l-4 5 3 2 4-5 M9 15l-3-2 M16 11a5 5 0 0 1-3 9 M5 21h14", label: "Анализы" },
+    { id: "protokol", icon: "M5 19a5 5 0 0 1 0-7l7-7a5 5 0 0 1 7 7l-7 7a5 5 0 0 1-7 0z M9 8l7 7", label: "Протокол" },
+    { id: "medcard", icon: "M3 7V5a1 1 0 0 1 1-1h5l2 3h8a2 2 0 0 1 2 2v10H3z M9 13h6 M12 10v6", label: "Медкарта" }
   ];
 
   // Older reports group sections by their boundary comments. New sections name their screen.
@@ -501,27 +501,34 @@
       if (!target || !record.contains(target)) {
         status.textContent = 'Источник недоступен в этой версии карты.'; return;
       }
-      remember(); pages[depth].focus = link; depth++;
-      pages.splice(depth); pages.push({target: target});
+      remember(); pages[depth].focus = link;
+      pages.push({target: target, parent: depth});
+      depth = pages.length - 1;
       try { history.pushState({recordView: instance, depth: depth}, '', '#medcard'); } catch (error) {}
+      var previous = document.querySelector('.report-back');
+      if (previous) previous.hidden = true;
       renderPage(false);
     });
     back.addEventListener('click', function () {
       if (!depth) return;
       if (history.state && history.state.recordView === instance) { history.back(); return; }
-      remember(); depth--; renderPage(true);
-    });
-    window.addEventListener('popstate', function (event) {
-      if (location.hash !== '#medcard') return;
-      var next = event.state && event.state.recordView === instance ? event.state.depth : 0;
-      if (next !== depth && pages[next]) { remember(); depth = next; renderPage(true); }
+      remember(); depth = pages[depth].parent; renderPage(true);
     });
     search.addEventListener('input', updateSearch);
     results.querySelector('[data-record-clear]').addEventListener('click', function () {
       search.value = ''; updateSearch(); search.focus();
     });
     updateSearch(); renderPage(false);
-    return true;
+    return function restoreRecord(state, entered) {
+      var next = state && state.recordView === instance && pages[state.depth] ? state.depth : 0;
+      if (next !== depth) {
+        if (!entered) remember();
+        depth = next;
+        renderPage(!entered);
+      } else if (entered && depth) {
+        renderPage(false);
+      }
+    };
   }
 
   function build() {
@@ -529,6 +536,8 @@
     if (!container || container.dataset.screensReady) return;
     container.dataset.screensReady = "1";
 
+    if (container.tagName !== "MAIN") container.setAttribute("role", "main");
+    container.tabIndex = -1;
     var screens = {};
     SCREENS.forEach(function (s) {
       var d = document.createElement("div");
@@ -554,12 +563,13 @@
     var medicalRecord = container.querySelector('.medical-record');
     if (medicalRecord) screens.medcard.appendChild(medicalRecord);
     else screens.medcard.textContent = 'Медицинская карта ещё не поступила в эту версию отчёта. Обновите приложение.';
+    var restoreRecord;
     if (medicalRecord) {
       setupMedicalPackage(medicalRecord);
       setupMedicalTimeline(medicalRecord);
-      var hasOverview = setupRecordOverview(medicalRecord);
+      restoreRecord = setupRecordOverview(medicalRecord);
       var search = medicalRecord.querySelector('[data-medical-search]');
-      if (!hasOverview && search) search.addEventListener('input', function () {
+      if (!restoreRecord && search) search.addEventListener('input', function () {
         var query = search.value.trim().toLocaleLowerCase();
         var visible = 0;
         medicalRecord.querySelectorAll('.medical-topic,.medical-document,.medical-draw,.medical-note,.medical-visit,.medical-current,.medical-treatment').forEach(function (block) {
@@ -570,7 +580,7 @@
         });
         medicalRecord.querySelector('[data-medical-found]').textContent = query ? 'Найдено блоков истории: ' + visible : '';
       });
-      if (!hasOverview) medicalRecord.addEventListener('click', function (event) {
+      if (!restoreRecord) medicalRecord.addEventListener('click', function (event) {
         var link = event.target.closest('[data-medical-source]');
         if (!link) return;
         event.preventDefault();
@@ -624,6 +634,12 @@
         if (archive.children.length > 1) screens.protokol.appendChild(archive);
       }
     }
+
+    // The app bar already names the section. Keep matching section headings for assistive navigation.
+    SCREENS.forEach(function (screen) {
+      var title = screens[screen.id].querySelector(".sec-title");
+      if (title && title.textContent.trim() === screen.label) title.classList.add("sr-only");
+    });
 
     // Overview bento: KPI tiles built from the .ovkpi blobs emitted by the chart generators
     var blobs = Array.prototype.slice.call(document.querySelectorAll(".ovkpi"));
@@ -715,48 +731,105 @@
       });
     });
 
-    // bottom tab bar
+    var hero = document.querySelector(".hero");
+    if (!hero) {
+      hero = document.createElement("header");
+      hero.className = "hero";
+      container.before(hero);
+    }
+    hero.setAttribute("role", "banner");
+    var overviewHeader = document.createElement("div");
+    overviewHeader.className = "overview-header";
+    Array.from(hero.children).forEach(function (node) {
+      if (!node.matches("#dash-lock,.theme-toggle")) overviewHeader.appendChild(node);
+    });
+    hero.prepend(overviewHeader);
+    var heading = document.createElement("h1");
+    heading.className = "report-heading";
+    overviewHeader.after(heading);
+
+    var previous = document.createElement("button");
+    previous.type = "button";
+    previous.className = "report-back";
+    previous.textContent = "‹";
+    previous.setAttribute("aria-label", "Назад");
+    previous.addEventListener("click", function () { history.back(); });
+    hero.prepend(previous);
+
     var nav = document.createElement("nav");
     nav.className = "tabbar";
-    // Вкладки — это навигация по одному документу, поэтому aria-current="page", а не роль tab:
-    // роль tablist обязывает к клавиатурной модели со стрелками, которой здесь нет.
     nav.setAttribute("aria-label", "Разделы отчёта");
     SCREENS.forEach(function (s) {
-      var b = document.createElement("button");
-      b.className = "tab";
-      b.setAttribute("data-screen", s.id);
-      b.innerHTML = '<span class="tab-i">' + s.icon + '</span><span class="tab-l">' + s.label + "</span>";
-      b.addEventListener("click", function () { show(s.id); });
-      nav.appendChild(b);
+      var link = document.createElement("a");
+      link.className = "tab";
+      link.href = "#" + s.id;
+      link.dataset.screen = s.id;
+      link.innerHTML = '<svg class="tab-i" aria-hidden="true" viewBox="0 0 24 24"><path d="' + s.icon +
+        '"/></svg><span class="tab-l">' + s.label + "</span>";
+      link.addEventListener("click", function (event) {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        show(s.id);
+      });
+      nav.appendChild(link);
     });
     document.body.appendChild(nav);
+    var skip = document.createElement("a");
+    skip.className = "report-skip";
+    skip.href = "#report-navigation";
+    nav.id = "report-navigation";
+    skip.textContent = "К разделам отчёта";
+    skip.addEventListener("click", function (event) {
+      event.preventDefault();
+      nav.querySelector("[aria-current]").focus();
+    });
+    hero.prepend(skip);
 
+    var active;
+    function display(id, focus) {
+      var changed = id !== active;
+      if (changed) {
+        SCREENS.forEach(function (s) {
+          var selected = s.id === id, link = nav.querySelector('[data-screen="' + s.id + '"]');
+          screens[s.id].hidden = !selected;
+          link.classList.toggle("active", selected);
+          if (selected) {
+            link.setAttribute("aria-current", "page");
+            heading.textContent = s.label;
+            container.setAttribute("aria-label", s.label);
+          } else link.removeAttribute("aria-current");
+        });
+        active = id;
+        overviewHeader.hidden = id !== "obzor";
+        heading.hidden = id === "obzor" && !!overviewHeader.children.length;
+        if (focus) container.focus({preventScroll: true});
+        window.scrollTo(0, 0);
+        prepareCharts(screens[id]);
+      }
+      previous.hidden = !(history.state && history.state.reportTab);
+      if (id === "medcard" && restoreRecord) restoreRecord(history.state, changed);
+    }
     function show(id) {
-      SCREENS.forEach(function (s) {
-        screens[s.id].style.display = s.id === id ? "block" : "none";
-        var tab = nav.querySelector('[data-screen="' + s.id + '"]');
-        if (tab) {
-          tab.classList.toggle("active", s.id === id);
-          // состояние «где я» не должно жить только в цвете: без этого скринридер
-          // не отличает активную вкладку от остальных (WCAG 4.1.2)
-          if (s.id === id) { tab.setAttribute("aria-current", "page"); }
-          else { tab.removeAttribute("aria-current"); }
-        }
-      });
-      var hero = document.querySelector(".hero");
-      if (hero) hero.style.display = id === "obzor" ? "" : "none";
-      // адрес держим в синхроне без засорения истории — чтобы ярлык подсвечивал свою вкладку
-      try { if (location.hash !== "#" + id) history.replaceState(null, "", "#" + id); } catch (e) {}
-      window.scrollTo(0, 0);
-      prepareCharts(screens[id]);
+      if (!Object.prototype.hasOwnProperty.call(screens, id) || active === id) return;
+      try { history.pushState({reportTab: true}, "", "#" + id); }
+      catch (error) { location.hash = id; }
+      display(id, true);
+    }
+    function restoreRoute() {
+      var id = fromHash();
+      if (id || !location.hash) display(id || "obzor", true);
     }
     window.__showScreen = show;
-    window.addEventListener("resize", function () {
-      prepareCharts(screens[fromHash() || "obzor"]);
-    });
-    // хэш при запуске (ярлык/закладка) → эта вкладка, иначе «Обзор»; смена хэша на лету тоже ведёт
-    window.addEventListener("hashchange", function () { var h = fromHash(); if (h) show(h); });
-    show(fromHash() || "obzor");
+    window.addEventListener("popstate", restoreRoute);
+    window.addEventListener("hashchange", restoreRoute);
+    window.addEventListener("resize", function () { prepareCharts(screens[active]); });
+    if (window.ResizeObserver) new ResizeObserver(function () {
+      document.documentElement.style.setProperty("--nav-height", nav.offsetHeight + "px");
+    }).observe(nav);
+    if (!location.hash) {
+      try { history.replaceState(history.state, "", "#obzor"); } catch (error) {}
+    }
+    display(fromHash() || "obzor", false);
   }
 
   /* Новая версия в standalone приходит молча: service worker делает skipWaiting и подменяет
@@ -801,19 +874,21 @@
 (function () {
   "use strict";
   var root = document.documentElement;
-  var META = { dark: "#192426", light: "#ffffff" };
   function current() { return root.getAttribute("data-theme") === "light" ? "light" : "dark"; }
 
   function stored() { try { return localStorage.getItem("theme"); } catch (e) { return null; } }
-  function paintMeta(t) {
+  function paintMeta() {
     var m = document.querySelector('meta[name="theme-color"]');
-    if (m) m.setAttribute("content", t === "light" ? META.light : META.dark);
+    if (m) m.setAttribute("content", getComputedStyle(root).getPropertyValue("--surface").trim());
   }
   var btn = null;
   function apply(t) {
     root.setAttribute("data-theme", t);
-    paintMeta(t);
-    if (btn) btn.textContent = t === "light" ? "☀️" : "🌙";
+    paintMeta();
+    if (btn) {
+      btn.textContent = t === "light" ? "☾" : "☀";
+      btn.setAttribute("aria-pressed", String(t === "dark"));
+    }
   }
   function mount() {
     var preference = stored();
@@ -825,15 +900,16 @@
     btn = document.createElement("button");
     btn.className = "theme-toggle";
     btn.type = "button";
-    btn.setAttribute("aria-label", "Переключить тему");
-    btn.textContent = current() === "light" ? "☀️" : "🌙";
+    btn.setAttribute("aria-label", "Тёмная тема");
+    btn.title = "Тёмная тема";
+    apply(preference);
     btn.addEventListener("click", function () {
       var t = current() === "light" ? "dark" : "light";
       try { localStorage.setItem("theme", t); } catch (e) {}
       apply(t);
     });
     (document.querySelector(".hero") || document.body).appendChild(btn);   // кнопка живёт в полосе приложения, а не поверх контента
-    paintMeta(current());
+    paintMeta();
   }
   try {
     var mq = window.matchMedia("(prefers-color-scheme: light)");

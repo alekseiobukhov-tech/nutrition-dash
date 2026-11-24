@@ -4,7 +4,7 @@
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
 }
 
-body { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+body { padding-bottom: var(--nav-height,calc(68px + env(safe-area-inset-bottom, 0px))); }
 
 .screen { animation: scr .18s ease; }
 @keyframes scr { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
@@ -25,8 +25,8 @@ body { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
 /* ---- bottom tab bar ---- */
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0;
-  height: 68px;
-  display: flex; justify-content: space-around; align-items: stretch;
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,max(3.5rem,16%)),1fr));
+  align-items:stretch;
   padding-bottom: env(safe-area-inset-bottom, 0px);
   background: var(--tabbar-bg);
   backdrop-filter: saturate(160%) blur(24px);
@@ -38,7 +38,7 @@ body { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
 .tab {
   position: relative; flex: 1;
   min-width: 0; padding-left: 2px; padding-right: 2px;
-  min-height: 44px;                               /* HIG/WCAG 2.5.5: зона нажатия ≥44px (бар и так 68) */
+  min-height: 56px; text-decoration:none;             /* HIG/WCAG 2.5.5: зона нажатия ≥44px (бар и так 68) */
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   background: none; border: none; color: var(--text-3);
   font-family: inherit; cursor: pointer;
@@ -52,18 +52,18 @@ body { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
   opacity: 0; transform: scaleX(.3);
   transition: opacity .2s ease, transform .2s cubic-bezier(.2, .8, .2, 1);
 }
-.tab-i { font-size: 24px; line-height: 1; opacity: .55; filter: grayscale(.35); transition: all .15s ease; }
-.tab-l { font-size: 11px; font-weight: 700; letter-spacing: .3px; }
+.tab-i { width:1.4rem; height:1.4rem; flex:none; fill:none; stroke:currentColor;
+  stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.tab-l { font-size:.6875rem; line-height:1.25; font-weight:650; }
 .tab.active { color: var(--accent); }
 .tab.active::before { opacity: 1; transform: scaleX(1); }
-.tab.active .tab-i { opacity: 1; transform: translateY(-1px); filter: drop-shadow(0 0 6px var(--accent)); }
 .tab:active { transform: scale(.92); }
 
 /* ---- collapsible heavy tables (progressive disclosure) ---- */
 details.collapse { margin: var(--s3) 0; }
 details.collapse > summary {
   list-style: none; cursor: pointer;
-  min-height: 44px;                               /* HIG/WCAG 2.5.5: раскрывашка — полноразмерная зона нажатия */
+  min-height: 56px; text-decoration:none;             /* HIG/WCAG 2.5.5: раскрывашка — полноразмерная зона нажатия */
   display: flex; align-items: center; gap: 8px;
   padding: 12px 14px;
   background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
@@ -103,29 +103,29 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 .tile.c-muted .sub { color: var(--text-3); }
 
 /* Shared appearance for every report screen. */
+/* Keep legacy generated sections and native controls on the same semantic colours. */
 :root {
   color-scheme:dark;
-  --bg:#10191b; --surface:#192426; --surface-2:#243032;
-  --text:#e9f1ef; --text-hi:#f5faf8; --text-2:#bdccc9; --text-3:#9baea9;
-  --line:#38494a; --line-2:#485b5b; --line-soft:#304042; --line-hair:#2b393b;
-  --accent:#99dfd2; --accent-dim:#64b8a9; --accent-surface:#203b38;
-  --chart-energy:#98baff; --chart-protein:#75d8bf; --chart-track:#354648;
-  --plot-good:#42c785; --plot-warn:#facc15; --plot-bad:#f3677a;
-  --good:#22c55e; --warn:#facc15; --bad:#ff8493; --info:#8bbafa; --violet:#bcacf4;
+  --bg:#23384b; --surface:#2d4559; --surface-2:#334d60;
+  --text:#f1f6fa; --text-hi:#ffffff; --text-2:#ddebf0; --text-3:#becfd9;
+  --line:#4e697a; --line-2:#718a99; --line-soft:#496171; --line-hair:#425c70;
+  --accent:#a4dcff; --accent-dim:#86c9f3; --accent-surface:#36566d;
+  --chart-energy:#91ceff; --chart-protein:#7ae3bd; --chart-track:#506777;
+  --plot-good:#74dfa9; --plot-warn:#ffce68; --plot-bad:#ff95a0;
+  --good:#88e8b7; --warn:#ffda88; --bad:#ffb1b7; --info:#a4dcff; --violet:#d1befc;
   --bg-hero-1:var(--surface); --bg-hero-2:var(--surface); --bg-hero-3:var(--surface);
   --border:var(--line); --warning:var(--warn);
-  --tabbar-bg:#192426f5; --toggle-edge:var(--line-2);
+  --tabbar-bg:var(--surface); --toggle-edge:var(--line-2);
 }
 :root[data-theme="light"] {
   color-scheme:light;
-  --bg:#f2f6f4; --surface:#ffffff; --surface-2:#e8efec;
-  --text:#263c38; --text-hi:#182d2a; --text-2:#435c56; --text-3:#536b65;
-  --line:#d4dfda; --line-2:#becfc7; --line-soft:#dfe8e3; --line-hair:#e4ece7;
-  --accent:#155e57; --accent-dim:#28766d; --accent-surface:#e2f0eb;
-  --chart-energy:#345fb4; --chart-protein:#176e60; --chart-track:#d8e3df;
-  --plot-good:#1b844d; --plot-warn:#987304; --plot-bad:#c63d55;
-  --good:#137a3a; --warn:#7d6a00; --bad:#be123c; --info:#2855a3; --violet:#6d28d9;
-  --tabbar-bg:#fffffff5;
+  --bg:#fff8eb; --surface:#ffffff; --surface-2:#edf6fb;
+  --text:#263d50; --text-hi:#17344b; --text-2:#405b70; --text-3:#536b7b;
+  --line:#d4e3e9; --line-2:#acc7d4; --line-soft:#e1ebef; --line-hair:#e4edf1;
+  --accent:#146598; --accent-dim:#267aa7; --accent-surface:#dff2fc;
+  --chart-energy:#307ab3; --chart-protein:#008164; --chart-track:#dfeaf0;
+  --plot-good:#299263; --plot-warn:#af7d0c; --plot-bad:#d34c61;
+  --good:#197449; --warn:#805a0a; --bad:#ae354c; --info:#146598; --violet:#7355a2;
 }
 
 :root body { background:var(--bg); color:var(--text); }
@@ -138,7 +138,6 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
   background-color:var(--surface); border-color:var(--line);
 }
 .screen a:not([class]),.tab.active { color:var(--accent); }
-.tab.active .tab-i { filter:none; }
 .screen .tag-green,.screen .tag-red,.screen .tag-blue {
   background-color:var(--surface); border-color:currentColor;
 }
@@ -196,6 +195,7 @@ svg[aria-label^="Белок сегодня"] { --ring-ink:var(--chart-protein); 
     linear-gradient(to left,  var(--surface) 30%, transparent),
     radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.28), transparent),
     radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.28), transparent);
+  background-color:var(--surface);
   background-position: 0 0, 100% 0, 0 0, 100% 0;
   background-repeat: no-repeat;
   background-size: 34px 100%, 34px 100%, 14px 100%, 14px 100%;
@@ -223,8 +223,8 @@ svg[aria-label^="Белок сегодня"] { --ring-ink:var(--chart-protein); 
   padding:calc(8px + env(safe-area-inset-top,0px)) 14px 8px;
   font-size:13px; font-weight:600; line-height:1.35; text-align:center;
 }
-.freshness.off  {background:#e9456020; color:var(--bad);  border-bottom:1px solid #e9456040}
-.freshness.stale{background:#facc1520; color:var(--warn); border-bottom:1px solid #facc1540}
+.freshness.off {background:var(--surface-2);color:var(--text);border-bottom:1px solid var(--line)}
+.freshness.stale {background:color-mix(in srgb,var(--surface) 92%,var(--warn));color:var(--warn);border-bottom:1px solid var(--line)}
 .freshness-btn{
   font:inherit; padding:4px 14px; border-radius:999px; cursor:pointer;
   background:var(--surface); color:var(--text); border:1px solid var(--line-2);
@@ -270,19 +270,13 @@ svg[aria-label^="Белок сегодня"] { --ring-ink:var(--chart-protein); 
 :root[data-theme="dark"] [style*="color:#8888aa"]{color:var(--text-3)!important}
 :root[data-theme="dark"] [style*="color:#8888bb"]{color:var(--text-3)!important}
 
-/* Жёлтый светофора в тёмной теме — ярко-жёлтый (yellow-400 #facc15) вместо оранжевого
-   amber #f59e0b. Выбор владельца 23.07: «жёлтый жёлтым, ярче, ближе к золоту». Свет остаётся
-   AA-#8a5a00 (яркий жёлтый на белом не читается). Генераторы по-прежнему печатают #f59e0b/
-   #fbbf24 — тема правит ПО ЗНАЧЕНИЮ (правило 1), это же ловит append-only строки недельной
-   таблицы. На #0f0f13 #facc15 даёт ~11:1. Карта — contrast.py THEME_MAP["dark"]. */
-:root[data-theme="dark"] [style*="color:#f59e0b"]{color:#facc15!important}
-:root[data-theme="dark"] [style*="color:#fbbf24"]{color:#facc15!important}
-/* столбцы графиков: fill — презентационный атрибут, перебивается без !important */
-:root[data-theme="dark"] svg [fill="#f59e0b"]{fill:#facc15}
-/* классовые теги/алерты живут в <style> страницы (подключён ПОСЛЕ app.css); специфичность
-   0,3,0 у :root[data-theme] .class бьёт их 0,1,0 без !important */
-:root[data-theme="dark"] .tag-yellow{color:#facc15; background:#facc1520; border-color:#facc1540}
-:root[data-theme="dark"] .alert-yellow{background:#facc1512; border-color:#facc1540}
+:root[data-theme="dark"] [style*="color:#f59e0b"],
+:root[data-theme="dark"] [style*="color:#fbbf24"] {color:var(--warn)!important}
+:root[data-theme="dark"] [style*="color:#22c55e"] {color:var(--good)!important}
+:root[data-theme="dark"] [style*="color:#a78bfa"] {color:var(--violet)!important}
+:root[data-theme] .tag-yellow,:root[data-theme] .alert-yellow {
+  color:var(--warn); background:color-mix(in srgb,var(--warn) 10%,var(--surface)); border-color:var(--warn);
+}
 
 /* inline note-box surfaces/borders (e.g. background:#1a1a2e; border:1px solid #ffffff0d) */
 :root[data-theme="light"] [style*="background:#1a1a2e"]{background:var(--surface-2)!important}
@@ -300,28 +294,37 @@ svg[aria-label^="Белок сегодня"] { --ring-ink:var(--chart-protein); 
 :root[data-theme="light"] svg [fill="#ffffff12"],
 :root[data-theme="light"] svg [fill="#ffffff14"]{fill:#0000000d}
 
-/* Светофор в СВЕТЛОЙ теме — жёлтое золото вместо оранжевого. Текст warn идёт через
-   var(--warn)=#7d6a00 (выше). Здесь — то, что мимо var: столбцы графиков (fill) и классовые
-   теги/алерты (их текст #fbbf24 на белом давал 1.67:1 — латентный баг, чинится заодно). */
-:root[data-theme="light"] svg [fill="#f59e0b"]{fill:#c9970a}   /* бар: золото, крупная заливка терпит ~2.9:1 как оранжевая раньше */
-:root[data-theme="light"] .tag-yellow{color:#7d6a00; background:#7d6a0018; border-color:#7d6a0040}
-:root[data-theme="light"] .alert-yellow{background:#7d6a0012; border-color:#7d6a0040}
+/* Older charts encode series roles in SVG presentation attributes. */
+.screen svg :is([fill="#22c55e"],[fill="#4ade80"]):not(text) {fill:var(--plot-good)}
+.screen svg :is([fill="#f59e0b"],[fill="#fbbf24"]):not(text) {fill:var(--plot-warn)}
+.screen svg :is([fill="#e94560"],[fill="#ef4444"]):not(text) {fill:var(--plot-bad)}
+.screen svg :is([fill="#06b6d4"],[fill="#22d3ee"],[fill="#3b82f6"]) {fill:var(--chart-energy)}
+.screen svg :is([stroke="#06b6d4"],[stroke="#22d3ee"],[stroke="#3b82f6"]) {stroke:var(--chart-energy)}
+.screen svg [fill="#a78bfa"] {fill:var(--violet)}
+.screen svg [stroke="#a78bfa"] {stroke:var(--violet)}
+.screen svg text:is([fill="#aaaacc"],[fill="#8888bb"]) {fill:var(--text-2)}
+.screen svg [stroke="#aaaacc"] {stroke:var(--text-3)}
 
-/* ---- Floating theme toggle ---- */
-.theme-toggle{
-  position:fixed; top:calc(12px + env(safe-area-inset-top,0px)); right:14px;
-  width:44px; height:44px; border-radius:50%;   /* HIG: минимальная зона нажатия */
-  display:flex; align-items:center; justify-content:center;
-  font-size:18px; line-height:1; cursor:pointer;
-  background:var(--surface); color:var(--text);
-  border:1px solid var(--toggle-edge);
-  box-shadow:0 3px 14px #0000004a, 0 0 0 1px var(--toggle-edge);
-  -webkit-backdrop-filter:saturate(160%) blur(10px); backdrop-filter:saturate(160%) blur(10px);
-  z-index:1100; user-select:none; -webkit-tap-highlight-color:transparent;
-  transition:transform .15s ease, background .2s ease, border-color .2s ease;
+.theme-toggle,.report-back {
+  flex:none; width:44px; height:44px; display:grid; place-items:center; padding:0;
+  border-radius:50%; border:1px solid var(--line); color:var(--accent);
+  background:var(--accent-surface); cursor:pointer; font:600 1.4rem/1 system-ui,sans-serif;
 }
-.theme-toggle:active{transform:scale(0.9)}
-
+.theme-toggle { min-height:44px; }
+.report-back {font-size:1.75rem;}
+.hero [hidden],.screen[hidden] {display:none!important}
+.hero.hero {flex-wrap:wrap; justify-content:flex-start; gap:4px 8px; border-bottom:1px solid var(--line)}
+.overview-header,.report-heading {margin:0 auto 0 0; min-width:0; flex:1 1 4rem; overflow-wrap:anywhere}
+.hero .report-heading,.overview-header h1:not(.sr-only) {font-size:1.125rem; line-height:1.2; color:var(--text-hi)}
+.hero .overview-header .hero-sub {color:var(--text-3)}
+.hero #dash-lock {color:var(--text-2)!important; border-color:var(--line-2)!important;}
+.report-skip {position:absolute; clip-path:inset(50%); width:1px; height:1px; overflow:hidden;}
+.report-skip:focus {position:relative; clip-path:none; width:auto; height:auto; padding:8px;
+  background:var(--surface); color:var(--accent); }
+:where(button,a,summary,input,select,textarea,[tabindex]):focus-visible {outline:3px solid var(--accent);outline-offset:2px}
+.container:focus-visible {outline:2px solid var(--accent);outline-offset:-3px}
+.tab:focus-visible {outline-offset:-4px;border-radius:8px}
+:root {scroll-padding-bottom:calc(var(--nav-height,68px) + 8px)}
 /* Keep labels and values on separate lines; the generator emits spans. */
 .score-card .area, .score-card .delta { display: block; }
 .score-card { min-width: 0; overflow-wrap: anywhere; }
@@ -415,6 +418,7 @@ svg[aria-label^="Белок сегодня"] { --ring-ink:var(--chart-protein); 
 .medical-record [data-record-home] { max-width:44rem; }
 .medical-record .record-search { display:block; margin:12px 0 16px; }
 .medical-record .record-search>span { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+.medical-record .record-search input::placeholder {color:var(--text-3);opacity:1}
 .medical-record .record-search input { width:100%; box-sizing:border-box; min-height:46px; padding:9px 12px; font:inherit; font-size:16px; }
 .medical-record .record-heading,.medical-record .record-sections { display:flex; align-items:center; gap:10px; }
 .medical-record .record-heading { justify-content:space-between; margin-top:14px; }
@@ -463,5 +467,9 @@ svg[aria-label^="Белок сегодня"] { --ring-ink:var(--chart-protein); 
 .source-dates { display:flex; flex-wrap:wrap; gap:6px 16px; margin:0 0 16px; padding:10px 12px; background:var(--surface-2); border:1px solid var(--line-hair); border-radius:10px; }
 .score-date { margin-top:6px; font-weight:400; }
 
-/* Keep six navigation labels distinct on compact phones. */
-@media (max-width:360px){.tab-l{font-size:9px;letter-spacing:0}}
+/* Three columns keep all six labels legible at narrow widths and high zoom. */
+@media(max-width:22em) {
+  .tabbar {grid-template-columns:repeat(3,minmax(0,1fr))}
+  .tab {flex-direction:row; gap:3px; min-height:44px;}
+  .tab-i {width:1rem;height:1rem;}
+}
