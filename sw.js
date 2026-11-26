@@ -1,6 +1,6 @@
 // Health Dashboard PWA service worker.
 // Network-first for the report (always fresh when online), cache fallback offline.
-const CACHE = 'health-981580e3ac56f18d';
+const CACHE = 'health-91184e263812bfb8';
 const SHELL = [
   'feedback_2026.html',
   'app.js',
@@ -11,30 +11,73 @@ const SHELL = [
   'icons/icon-180.png'
 ];
 
-self.addEventListener('install', (e) => {
-  // addAll commits the complete shell together. A failed update leaves the old worker active.
-  e.waitUntil(caches.open(CACHE).then((c) =>
-    c.addAll(SHELL.map(path => new Request(new URL(path, self.registration.scope), {cache: 'reload'})))
-  ).then(() => self.skipWaiting()));
-});
+const OPTIONAL_REPORTS = ['health_analytics_2026.html', 'index.html'];
+const REPORTS = ['feedback_2026.html', ...OPTIONAL_REPORTS];
+
+function oldReportCache(name) {
+  return name !== CACHE && /^health-(?:v\d+|[0-9a-f]{16})$/.test(name);
+}
+
+async function installShell() {
+  const paths = [...SHELL];
+  const previous = (await caches.keys()).filter(oldReportCache);
+  for (const page of OPTIONAL_REPORTS) {
+    const url = new URL(page, self.registration.scope).href;
+    for (const name of previous) {
+      if (await caches.match(url, {cacheName: name})) {
+        paths.push(page);
+        break;
+      }
+    }
+  }
+  // Fetch fresh encrypted copies of previously visited reports. A failed batch keeps the old worker active.
+  const cache = await caches.open(CACHE);
+  await cache.addAll(paths.map(path => new Request(new URL(path, self.registration.scope), {cache: 'reload'})));
+  await self.skipWaiting();
+}
+
+self.addEventListener('install', event => event.waitUntil(installShell()));
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) =>
-        k !== CACHE && /^health-(?:v\d+|[0-9a-f]{16})$/.test(k)
-      ).map((k) => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(oldReportCache).map(key => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
 
-const REPORTS = ['feedback_2026.html', 'health_analytics_2026.html', 'index.html'];
+async function cachedResponse(key) {
+  try {
+    return await caches.match(key, {cacheName: CACHE});
+  } catch {
+    // Storage can be unavailable even when the network works.
+    return undefined;
+  }
+}
 
 async function serve(request, key, report) {
+  if (report && ['Range', 'If-Range', 'If-Match', 'If-None-Match', 'If-Modified-Since', 'If-Unmodified-Since']
+    .some(name => request.headers.has(name))) {
+    // An ordinary cached 200 cannot answer the caller's range or precondition.
+    return fetch(request, {cache: 'reload'});
+  }
   let response;
   try {
-    // A receipt can reopen the same URL immediately after a new diary was published.
-    response = report ? await fetch(request, {cache: "reload"}) : await fetch(request);
+    if (report) {
+      const saved = await cachedResponse(key);
+      const tag = saved && saved.status === 200 && !saved.redirected && saved.headers.get('ETag');
+      if (tag) {
+        // Validate the copy held by this worker, even if the browser HTTP cache is still fresh.
+        const headers = new Headers(request.headers);
+        headers.set('If-None-Match', tag);
+        response = await fetch(request, {headers, cache: 'no-store'});
+        if (response.status === 304 && !response.redirected) return saved;
+      } else {
+        response = await fetch(request, {cache: 'reload'});
+      }
+    } else {
+      response = await fetch(request);
+    }
   } catch {
     // The exact cached resource can still satisfy an offline request.
   }
@@ -48,13 +91,7 @@ async function serve(request, key, report) {
     return response;
   }
   if (response && response.status < 500) return response;
-  try {
-    const cached = await caches.match(key, {cacheName: CACHE});
-    if (cached) return cached;
-  } catch {
-    // The network response, when available, still carries the original failure.
-  }
-  return response || Response.error();
+  return (await cachedResponse(key)) || response || Response.error();
 }
 
 self.addEventListener('fetch', (event) => {
