@@ -220,38 +220,42 @@
     return section;
   }
 
-  function prepareWeightChart(screen) {
-    var svg = screen.querySelector('.table-wrap > svg[aria-label^="График веса"]');
-    if (!svg || svg.closest('.weight-detail') || !svg.querySelector('polyline')) return;
-    var wrap = svg.parentNode, bounds = svg.viewBox.baseVal;
-    if (!bounds.width || !bounds.height) return;
-    var compact = svg.cloneNode(true), width = 320, scale = width / bounds.width;
-    compact.setAttribute('viewBox', '0 0 ' + width + ' ' + bounds.height);
-    compact.setAttribute('width', '100%');
-    compact.classList.add('weight-overview');
-    compact.querySelectorAll('[x],[x1],[cx]').forEach(function (node) {
+  function prepareWeightChart(svg) {
+    if (svg.classList.contains('weight-chart')) return;
+    var originalWidth = svg.viewBox.baseVal.width, height = svg.viewBox.baseVal.height;
+    if (!originalWidth || !height) return;
+    svg.classList.add('weight-chart');
+
+    // Percentages keep dots, grid lines and the goal band aligned as the viewBox changes.
+    svg.querySelectorAll('[x],[x1],[cx]').forEach(function (node) {
       ['x','x1','x2','cx','width'].forEach(function (key) {
-        if (node.hasAttribute(key)) node.setAttribute(key, Number(node.getAttribute(key)) * scale);
+        if (node.hasAttribute(key)) {
+          node.setAttribute(key, 100 * Number(node.getAttribute(key)) / originalWidth + '%');
+        }
       });
     });
-    compact.querySelectorAll('polyline').forEach(function (line) {
-      Array.from(line.points).forEach(function (point) { point.x *= scale; });
+    var lines = svg.querySelectorAll('polyline');
+    var months = Array.from(svg.querySelectorAll('text[text-anchor="middle"]'), function (label) {
+      return {label: label, position: parseFloat(label.getAttribute('x')) / 100};
     });
-    var last = -Infinity;
-    compact.querySelectorAll('text[text-anchor="middle"]').forEach(function (label) {
-      var x = Number(label.getAttribute('x'));
-      if (x - last < 40) label.remove();
-      else { last = x; label.setAttribute('x', Math.max(14, Math.min(width - 14, x))); }
-    });
-    var full = element('details', 'weight-detail collapse');
-    full.appendChild(element('summary', '', 'Подробный график веса'));
-    wrap.before(compact, full);
-    full.appendChild(wrap);
-    var wide = window.matchMedia('(min-width:761px)');
-    function adjust() { full.open = wide.matches; }
-    adjust();
-    wide.addEventListener('change', adjust);
-    full.addEventListener('toggle', function () { if (full.open) prepareCharts(screen); });
+    var narrow = window.matchMedia('(max-width:760px)');
+    function layout() {
+      var width = narrow.matches ? Math.min(320, originalWidth) : originalWidth;
+      svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+      lines.forEach(function (line) {
+        line.setAttribute('transform', 'scale(' + width / originalWidth + ' 1)');
+      });
+      var last = -Infinity;
+      months.forEach(function (month) {
+        var x = Math.max(14, Math.min(width - 14, month.position * width));
+        var visible = x - last >= 40;
+        month.label.setAttribute('x', x);
+        month.label.style.display = visible ? '' : 'none';
+        if (visible) last = x;
+      });
+    }
+    layout();
+    narrow.addEventListener('change', layout);
   }
 
   function compactTables(labs, protocol) {
@@ -297,11 +301,12 @@
   }
 
   function prepareCharts(screen) {
-    prepareWeightChart(screen);
     screen.querySelectorAll('.table-wrap').forEach(function (wrap) {
       if (!wrap.clientWidth) return;
       var svg = wrap.querySelector(':scope > svg');
-      if (!svg || !svg.viewBox || svg.viewBox.baseVal.width < 600) return;
+      if (!svg || !svg.viewBox) return;
+      if (svg.matches('[aria-label^="График веса"]')) { prepareWeightChart(svg); return; }
+      if (svg.viewBox.baseVal.width < 600) return;
       wrap.classList.add('chart-scroll');
       wrap.setAttribute('role', 'region');
       wrap.setAttribute('aria-label', 'График: прокручивайте для просмотра всего периода');
