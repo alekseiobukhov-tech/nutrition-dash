@@ -381,10 +381,25 @@
     changed();
   }
 
+  async function deferredOriginals(record, set) {
+    var note = record.querySelector('[data-originals-offline]');
+    try {
+      var result = await window.healthOriginals(set);
+      if (note) note.textContent = result.offline ? 'Оригиналы сохранены для открытия без сети.' : 'Оригиналы доступны в этом сеансе.';
+      return result.files;
+    } catch (error) {
+      if (note) note.textContent = error.message === 'originals-version'
+        ? 'Обновите отчёт, чтобы загрузить актуальные оригиналы.'
+        : 'Для загрузки оригиналов подключитесь к сети и откройте документ повторно.';
+      throw error;
+    }
+  }
+
   async function originalBytes(record, id) {
     var node = record.querySelector('[id="medical-file-' + id + '"]');
     if (!node || !/^[a-f0-9]{20}$/.test(id)) throw new Error('missing-original');
     var file = JSON.parse(node.textContent);
+    if (node.dataset.originalsSet) file.data = (await deferredOriginals(record, node.dataset.originalsSet))[id];
     if (typeof file.data !== 'string' || file.data.length > 8 * 1024 * 1024 * 4 / 3 + 8 ||
         typeof file.sha !== 'string' || !/^[a-f0-9]{64}$/.test(file.sha) || file.sha.slice(0, 20) !== id ||
         typeof file.name !== 'string' || !['application/pdf', 'image/jpeg', 'image/png'].includes(file.mime)) throw new Error('invalid-original');
@@ -454,6 +469,25 @@
     var list = panel.querySelector('[data-medical-package-list]');
     var count = panel.querySelector('[data-medical-package-count]');
     var status = panel.querySelector('[data-medical-package-status]');
+    var first = record.querySelector('script[data-originals-set]');
+    var set = first && first.dataset.originalsSet;
+    if (set) {
+      var hint = Array.from(panel.querySelectorAll('p')).find(function (p) {
+        return p.textContent.includes('Пакет доступен офлайн после сохранения этой версии приложения.');
+      });
+      if (hint) {
+        hint.textContent = hint.textContent.replace('Пакет доступен офлайн после сохранения этой версии приложения.', '').trim();
+      }
+      var note = document.createElement('p');
+      note.dataset.originalsOffline = '';
+      note.textContent = 'Сохраняем оригиналы для открытия без сети…';
+      panel.appendChild(note);
+      function prepareOffline() {
+        setTimeout(function () { deferredOriginals(record, set).catch(function () {}); }, 1500);
+      }
+      if (document.readyState === 'complete') prepareOffline();
+      else window.addEventListener('load', prepareOffline, {once:true});
+    }
     var all = panel.querySelector('[data-medical-package-all]'), clear = panel.querySelector('[data-medical-package-clear]');
     var busy = false;
     function selected() { return boxes.filter(function (box) { return box.checked; }); }
