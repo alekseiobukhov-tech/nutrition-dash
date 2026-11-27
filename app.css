@@ -562,3 +562,22 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 .energy-add {display:inline-flex;align-items:center;box-sizing:border-box;min-height:44px;
   margin-top:.4rem;padding:.35rem .75rem;border:1px solid var(--line-2);
   border-radius:10px;background:var(--surface-2);color:var(--text-hi);text-decoration:none}
+
+.my-week {color:var(--text);min-width:0;overflow-wrap:anywhere}
+.my-week h2,.my-week h3,.week-day time {color:var(--text-hi)}
+.my-week h3 {margin:1rem 0 .35rem;font-size:1rem}
+.week-metrics {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,17rem),1fr));
+  gap:.75rem 1.25rem;margin:1rem 0}
+.week-metrics dt {font-size:.875rem;font-weight:600;color:var(--text-2)}
+.week-metrics dd {margin:.2rem 0 0}
+.week-metrics strong {display:block;font-size:1.35rem;line-height:1.25;color:var(--text-hi)}
+.week-metrics dd span,.week-day summary span,.week-records {font-size:.9rem;line-height:1.45;color:var(--text-2)}
+.week-metrics dd span {display:block;margin-top:.2rem}
+.my-week summary {box-sizing:border-box;min-height:44px;padding:.6rem .2rem;cursor:pointer}
+.week-day summary span {margin-inline-start:.65rem}
+.week-day time {font-weight:650;font-variant-numeric:tabular-nums}
+.week-records {padding:0 .5rem .65rem 1.15rem}
+.week-records p {margin:.2rem 0}
+.week-records ul {margin:.35rem 0;padding-inline-start:1.1rem}
+.week-previous {margin-top:.65rem}
+.week-previous > summary {font-weight:650;color:var(--text-hi)}
