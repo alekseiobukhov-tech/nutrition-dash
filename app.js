@@ -576,6 +576,40 @@
     update();
   }
 
+  function setupSinceVisit(record) {
+    var panel = record.querySelector('.since-visit');
+    if (!panel) return;
+    var input = panel.querySelector('[data-since-date]');
+    var results = panel.querySelector('[data-since-results]');
+    var status = panel.querySelector('[data-since-status]');
+    function filter() {
+      var valid = input.value && input.validity.valid;
+      results.hidden = !valid;
+      if (!valid) {
+        status.textContent = input.validity.rangeOverflow ? 'Выберите дату не позже даты отчёта.' :
+          'Укажите дату приёма, чтобы увидеть анализы и записанные решения.';
+        return;
+      }
+      var count = 0;
+      results.querySelectorAll('[data-since-group]').forEach(function (group) {
+        var found = 0;
+        group.querySelectorAll('[data-since-day]').forEach(function (row) {
+          var date = row.dataset.sinceDay;
+          row.hidden = date < input.value || date > input.max;
+          if (!row.hidden) found++;
+        });
+        var empty = group.querySelector('[data-since-empty]');
+        if (empty) empty.hidden = !!found;
+        count += found;
+      });
+      status.textContent = results.querySelector('[data-since-empty]') ?
+        'Найдено записей за выбранный период — ' + count + '.' : 'Источники для сравнения недоступны.';
+    }
+    input.addEventListener('input', filter);
+    input.addEventListener('change', filter);
+    filter();
+  }
+
   function setupRecordOverview(record) {
     var home = record.querySelector('[data-record-home]');
     if (!home) return false; // Existing reports retain their original text filter.
@@ -762,6 +796,7 @@
     if (medicalRecord) {
       setupMedicalPackage(medicalRecord);
       setupMedicalTimeline(medicalRecord);
+      setupSinceVisit(medicalRecord);
       restoreRecord = setupRecordOverview(medicalRecord);
       var search = medicalRecord.querySelector('[data-medical-search]');
       if (!restoreRecord && search) search.addEventListener('input', function () {

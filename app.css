@@ -582,3 +582,15 @@ details.collapse[open] > summary { border-radius: 12px 12px 0 0; }
 .week-records ul {margin:.35rem 0;padding-inline-start:1.1rem}
 .week-previous {margin-top:.65rem}
 .week-previous > summary {font-weight:650;color:var(--text-hi)}
+
+.medical-record .record-sections a[href="#record-section-since-visit"] {grid-column:1/-1}
+.since-visit {max-width:44rem}
+.since-visit h3 {font-size:1.2rem;margin:.5rem 0 1rem}
+.since-visit h4 {font-size:1rem;margin:1.2rem 0 .25rem}
+.since-visit label {display:grid;gap:.35rem;justify-items:start;font-weight:600}
+.since-visit input {min-height:44px;box-sizing:border-box;max-width:100%;padding:.4rem .65rem;font:inherit}
+.since-visit p,.since-row time,.since-row small {color:var(--record-muted);font-size:.875rem}
+.since-visit p {margin:.4rem 0}
+.medical-record a.since-row {display:grid;gap:.17rem;align-content:center;min-height:44px;
+  padding:.55rem .1rem;border-bottom:1px solid var(--record-line);text-decoration:none;color:var(--record-ink)}
+.since-row strong {font-weight:600;white-space:pre-line}
